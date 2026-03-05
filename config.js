@@ -8,4 +8,7 @@ export const BotConfig = {
   clientSecret: process.env.CLIENT_SECRET || '',
   databaseUrl: process.env.DATABASE_URL || '',
   environment: process.env.ENVIRONMENT || 'development',
+  webhooks: {
+    survey: process.env.SURVEY_WEBHOOK || '',
+  },
 };

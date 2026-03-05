@@ -1,4 +1,10 @@
-import { ContainerBuilder, MessageFlags, SlashCommandBuilder } from 'discord.js';
+import {
+  ContainerBuilder,
+  MessageFlags,
+  SlashCommandBuilder,
+  ButtonBuilder,
+  ButtonStyle,
+} from 'discord.js';
 import { BotConfig } from '../../config.js';
 import { createEvent, getAccount, getUser } from '../db/queries.js';
 import { MessageTone, noUserContainer } from '../utils/containers.js';
@@ -31,7 +37,23 @@ export default {
     console.log(account);
 
     const container = new ContainerBuilder();
-    container.addTextDisplayComponents((textDisplay) => textDisplay.setContent('## Settings'));
-    await interaction.reply({ components: [container], flags: [MessageFlags.IsComponentsV2] });
+    container.addTextDisplayComponents((textDisplay) =>
+      textDisplay.setContent(
+        '## Settings\nComing soon....\n\n-# In the meantime, you can join our support server and request settings changes there.'
+      )
+    );
+    container.addActionRowComponents((row) =>
+      row.addComponents(
+        new ButtonBuilder()
+          .setLabel('Join Support Server')
+          .setStyle(ButtonStyle.Link)
+          .setURL('https://discord.gg/5rUsSZTyf2')
+      )
+    );
+
+    await interaction.reply({
+      components: [container],
+      flags: [MessageFlags.Ephemeral, MessageFlags.IsComponentsV2],
+    });
   },
 };
