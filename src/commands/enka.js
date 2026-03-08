@@ -43,7 +43,7 @@ export default {
       uid = account.roleId;
     }
 
-    if (BotConfig.environment === 'production') {
+    if (user && BotConfig.environment === 'production') {
       await createEvent(interaction.user.id, {
         source: 'slash',
         action: 'enka',
