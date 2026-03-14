@@ -120,8 +120,8 @@ export default {
 
     const profile = await getCachedCardDetail(interaction.user.id);
     if (!profile || profile.status !== 0) {
-      const code = JSON.parse(profile?.msg ?? '{}').code ?? profile?.status ?? -1;
-      const msg = JSON.parse(profile?.msg ?? '{}').message ?? profile?.msg ?? 'Unknown error';
+      const code = JSON.parse(profile.msg).code || profile.status || -1;
+      const msg = JSON.parse(profile.msg).message || profile.msg || 'Unknown error';
 
       await interaction.editReply({
         components: [textContainer(`### [${code}] ${msg}`)],
