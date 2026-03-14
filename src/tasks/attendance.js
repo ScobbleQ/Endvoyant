@@ -1,6 +1,11 @@
 import { ContainerBuilder, MessageFlags } from 'discord.js';
 import pLimit from 'p-limit';
-import { createEvent, getAccount, getAllUsersWithAttendance } from '../db/queries.js';
+import {
+  createEvent,
+  getAccount,
+  getAllUsersWithAttendance,
+  updateAccount,
+} from '../db/queries.js';
 import { attendance, generateCredByCode, grantOAuth } from '../skport/api/index.js';
 import { privacy } from '../utils/privacy.js';
 
@@ -109,8 +114,12 @@ export async function checkAttendance(client) {
               components: [container],
               flags: [MessageFlags.IsComponentsV2],
             });
-          } catch (error) {
+          } catch (/** @type {any} */ error) {
             console.error(`[Cron:Attendance] Failed to DM user ${u.dcid}:`, error);
+            if (error.code === 50007) {
+              console.error(`[Cron:Attendance] User ${u.dcid} has DMs disabled`);
+              await updateAccount(u.dcid, skport.id, { key: 'enableNotif', value: false });
+            }
           }
         }
       } catch (error) {
