@@ -47,7 +47,7 @@ export default {
     }
 
     await interaction.reply({
-      components: [textContainer('Loading profile information...')],
+      components: [textContainer('// Accessing Endfield database...')],
       flags: [MessageFlags.IsComponentsV2],
     });
 
@@ -64,7 +64,7 @@ export default {
     }
 
     await interaction.editReply({
-      components: [textContainer('Profile information loaded')],
+      components: [textContainer('// Loading resources...')],
       flags: [MessageFlags.IsComponentsV2],
     });
 
