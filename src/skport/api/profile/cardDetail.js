@@ -4,12 +4,15 @@ import { computeSign } from '../../utils/computeSign.js';
  * @typedef {Object} CardDetail
  * @property {Base} base
  * @property {Characters[]} chars
- * @property {{ achieveMedals: [], display: {}, count: number }} achieve
+ * @property {{ achieveMedals: { achievementData: {}, level: number, isPlated: boolean, obtainTs: string }[], display: { [key: string]: string }, count: number }} achieve
  * @property {{ rooms: { id: string, type: number, level: number, chars: [], reports: Record<string, { char: [], output: {}, createdTimeTs: string }> }[] }} spaceShip
- * @property {{ domainId: string, level: number, settlements: { id: string, level: number, remainMoney: string, officerCharIds: string, name: string }[], moneyMgr: string, collections: { levelId: string, puzzleCount: number, trchestCount: number, pieceCount: number, blackboxCount: number }[], factory: null, name: string }[]} domain
+ * @property {Domain[]} domain
  * @property {{ curStamina: string, maxTs: string, maxStamina: string }} dungeon
  * @property {{ curLevel: number, maxLevel: number }} bpSystem
  * @property {{ dailyActivation: number, maxDailyActivation: number }} dailyMission
+ * @property {{ score: number, total: number }} weeklyMission
+ * @property {{ charSwitch: boolean, charIds: string[] }} config
+ * @property {string} currentTs
  */
 
 /**
@@ -93,8 +96,20 @@ import { computeSign } from '../../utils/computeSign.js';
  */
 
 /**
+ * @typedef {Object} Domain
+ * @property {string} domainId
+ * @property {number} level
+ * @property {{ id: string, level: number, exp: string, expToLevelUp: string, remainMoney: string, moneyMax: string, officerCharIds: string, officerCharAvatar: string, name: string, lastTickTime: string }[]} settlements
+ * @property {{ total: string, count: string }} moneyMgr
+ * @property {{ levelId: string, puzzleCount: number, trchestCount: number, equipTrchestCount: number, pieceCount: number, blackboxCount: number }[]} collections
+ * @property {{ levelId: string, name: string, puzzleCount: { count: number, total: number }, trchestCount: { count: number, total: number }, equipTrchestCount: { count: number, total: number }, pieceCount: { count: number, total: number }, blackboxCount: { count: number, total: number } }[]} levels
+ * @property {null} factory
+ * @property {string} name
+ */
+
+/**
  *
- * @param {{ serverId: string, roleId: string, userId: string, cred: string, token: string, hgId: string }} param0
+ * @param {{ serverId: string, roleId: string, cred: string, token: string }} param0
  * @returns {Promise<{ status: -1, msg: string } | { status: 0, data: CardDetail }>}
  * @example
  * // Login with email and password
@@ -112,13 +127,12 @@ import { computeSign } from '../../utils/computeSign.js';
  * const card = await cardDetail({
  *   serverId: roleInfo.serverId,
  *   roleId: roleInfo.roleId,
- *   userId: cred.data.userId,
  *   cred: cred.data.cred,
  *   token: cred.data.token,
  * });
  * console.dir(card, { depth: null });
  */
-export async function cardDetail({ serverId, roleId, userId, cred, token, hgId }) {
+export async function cardDetail({ serverId, roleId, cred, token }) {
   const url = 'https://zonai.skport.com/api/v1/game/endfield/card/detail';
 
   const headers = {

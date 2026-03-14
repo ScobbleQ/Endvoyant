@@ -232,7 +232,6 @@ const buildCharacterContainer = (character, catalogStateStr) => {
   const { charData, level, evolvePhase, potentialLevel, ownTs, weapon } = character;
   const profName = getProfessionName(character);
   const propName = getElementName(character);
-  console.dir(character, { depth: null });
 
   const container = new ContainerBuilder().addSectionComponents((section) =>
     section

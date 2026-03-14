@@ -30,10 +30,8 @@ export async function getCachedCardDetail(dcid) {
     const card = await cardDetail({
       serverId: skport.serverId,
       roleId: skport.roleId,
-      userId: skport.userId,
       cred: cred.data.cred,
       token: cred.data.token,
-      hgId: skport.hgId,
     });
 
     if (!card || card.status !== 0) {
