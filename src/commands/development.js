@@ -32,8 +32,7 @@ const buildDevelopmentContainer = (domains, domainIndex) => {
     );
   });
 
-  const settlements = (domain.settlements ?? []).toReversed();
-  for (const settlement of settlements) {
+  for (const settlement of domain.settlements ?? []) {
     const remainFormatted = Number(settlement.remainMoney ?? 0).toLocaleString();
     const maxFormatted = Number(settlement.moneyMax ?? 0).toLocaleString();
     const expToLevelUp = Number(settlement.expToLevelUp ?? 0);
