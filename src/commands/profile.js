@@ -46,28 +46,30 @@ export default {
       });
     }
 
+    await interaction.reply({
+      components: [textContainer('Loading profile information...')],
+      flags: [MessageFlags.IsComponentsV2],
+    });
+
     const profile = await getCachedCardDetail(interaction.user.id);
     if (!profile || profile.status !== 0) {
       const code = JSON.parse(profile.msg).code || profile.status || -1;
       const msg = JSON.parse(profile.msg).message || profile.msg || 'Unknown error';
 
-      await interaction.reply({
+      await interaction.editReply({
         components: [textContainer(`### [${code}] ${msg}`)],
-        flags: [MessageFlags.Ephemeral, MessageFlags.IsComponentsV2],
+        flags: [MessageFlags.IsComponentsV2],
       });
       return;
     }
 
-    const loadingContainer = new ContainerBuilder().addTextDisplayComponents((textDisplay) =>
-      textDisplay.setContent('Loading profile information...')
-    );
-
-    await interaction.reply({
-      components: [loadingContainer],
+    await interaction.editReply({
+      components: [textContainer('Profile information loaded')],
       flags: [MessageFlags.IsComponentsV2],
     });
 
     const profileContainer = new ContainerBuilder();
+    console.log(profile.data.spaceShip.rooms);
 
     const introSection = new SectionBuilder()
       .addTextDisplayComponents((textDisplay) =>
@@ -92,7 +94,7 @@ export default {
         `Weapons: ${profile.data.base.weaponNum}`,
         `Archives: ${profile.data.base.docNum}`,
         `Path of Glory: ${profile.data.achieve.count}`,
-        `Control Nexux Level: ${profile.data.spaceShip.rooms.find((r) => r.id === 'control_center')?.level}`,
+        `Control Nexux Level: ${profile.data.spaceShip.rooms.find((r) => r.type === 0)?.level}`,
       ].join('\n')
     );
     profileContainer.addTextDisplayComponents(statTextDisplay);
