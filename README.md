@@ -1,9 +1,5 @@
 # Endvoyant
 
-> [!IMPORTANT]
-> This bot is still in the early beta phase, features may not work as intended<br />
-> All data may be wiped once fully released
-
 A Discord bot for **Arknights: Endfield** with utility commands to enhance your experience.
 
 [Features](#features) |
