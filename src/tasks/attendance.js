@@ -28,7 +28,7 @@ export async function checkAttendance(client) {
         const skport = await getAccount(u.dcid);
         if (!skport) throw new Error("User's SKPort data not found");
 
-        const oauth = await grantOAuth({ token: skport.accountToken, type: 0 });
+        const oauth = await grantOAuth({ token: skport.accountToken, appCode: '6eb76d4e13aa36e6' });
         if (!oauth || oauth.status !== 0) throw new Error(oauth?.msg ?? 'OAuth failed');
 
         const cred = await generateCredByCode({ code: oauth.data.code });

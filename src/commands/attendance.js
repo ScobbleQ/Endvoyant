@@ -48,7 +48,7 @@ export default {
       return;
     }
 
-    const oauth = await grantOAuth({ token: skport.accountToken, type: 0 });
+    const oauth = await grantOAuth({ token: skport.accountToken, appCode: '6eb76d4e13aa36e6' });
     if (!oauth || oauth.status !== 0) {
       await interaction.editReply({
         components: [oauthErrorContainer()],
@@ -57,7 +57,6 @@ export default {
       return;
     }
 
-    // @ts-ignore: code is guaranteed since we are using type 0
     const cred = await generateCredByCode({ code: oauth.data.code });
     if (!cred || cred.status !== 0) {
       await interaction.editReply({

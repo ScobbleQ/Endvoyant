@@ -264,7 +264,7 @@ export default {
       flags: [MessageFlags.IsComponentsV2],
     });
 
-    const oauth = await grantOAuth({ token: loginData.token, type: 0 });
+    const oauth = await grantOAuth({ token: loginData.token, appCode: '6eb76d4e13aa36e6' });
     if (!oauth || oauth.status !== 0) {
       const oauthErrorContainer = new ContainerBuilder().addTextDisplayComponents((textDisplay) =>
         textDisplay.setContent(oauth.msg || 'Failed to grant OAuth token')
@@ -276,7 +276,6 @@ export default {
       return;
     }
 
-    // @ts-ignore: code is guaranteed since we are using type 0
     const cred = await generateCredByCode({ code: oauth.data.code });
     if (!cred || cred.status !== 0) {
       const credErrorContainer = new ContainerBuilder().addTextDisplayComponents((textDisplay) =>

@@ -21,7 +21,7 @@ export async function getCachedCardDetail(dcid) {
     const skport = await getAccount(user.dcid);
     if (!skport) return { status: -1, msg: 'SKPort account not found' };
 
-    const oauth = await grantOAuth({ token: skport.accountToken, type: 0 });
+    const oauth = await grantOAuth({ token: skport.accountToken, appCode: '6eb76d4e13aa36e6' });
     if (!oauth || oauth.status !== 0) return { status: -1, msg: 'Failed to grant OAuth token' };
 
     const cred = await generateCredByCode({ code: oauth.data.code });
