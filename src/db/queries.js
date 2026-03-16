@@ -1,31 +1,20 @@
+export * from './users.js';
+export * from './accounts.js';
+export * from './events.js';
+
 import { and, desc, eq } from 'drizzle-orm';
 import { db } from './index.js';
 import { accounts, events, users } from './schema.js';
 
 /**
- * Create an account in the database
+ * Create user and account in a single transaction (all-or-nothing).
  * @param {string} dcid
- * @param {{ nickname: string, accountToken: string, hgId: string, userId: string, channelId: string, serverType: string, serverId: string, serverName: string, roleId: string }} param0
- * @returns {Promise<void>}
+ * @param {Omit<typeof accounts.$inferInsert, 'dcid'>} data
  */
-export async function createAccount(
-  dcid,
-  { nickname, accountToken, hgId, userId, channelId, serverType, serverId, serverName, roleId }
-) {
+export async function createEndfieldAccount(dcid, data) {
   await db.transaction(async (tx) => {
     await tx.insert(users).values({ dcid });
-    await tx.insert(accounts).values({
-      dcid,
-      nickname: nickname,
-      accountToken: accountToken,
-      hgId: hgId,
-      userId: userId,
-      channelId: channelId,
-      serverType: serverType,
-      serverId: serverId,
-      serverName: serverName,
-      roleId: roleId,
-    });
+    await tx.insert(accounts).values({ dcid, ...data });
   });
 }
 
