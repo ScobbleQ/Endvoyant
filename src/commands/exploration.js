@@ -119,6 +119,11 @@ export default {
       return;
     }
 
+    await interaction.editReply({
+      components: [textContainer('// Loading resources...')],
+      flags: [MessageFlags.IsComponentsV2],
+    });
+
     const container = buildExplorationContainer(profile.data.domain, 0);
     await interaction.editReply({
       components: [container],
