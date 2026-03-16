@@ -5,6 +5,7 @@ import {
   MessageFlags,
   SlashCommandBuilder,
   StringSelectMenuBuilder,
+  AttachmentBuilder,
 } from 'discord.js';
 import { ElementType, Profession } from '../skport/utils/constants.js';
 import { getCachedCardDetail } from '../skport/utils/getCachedCardDetail.js';
@@ -16,7 +17,14 @@ import { generateCharacterBuild } from '../utils/generateCharacterBuild.js';
 /** @typedef {import('../skport/api/profile/cardDetail.js').Characters} Characters */
 
 const CHARS_PER_PAGE = 5;
-const INITIAL_STATE = { page: 0, profession: 'all', element: 'all' };
+const INITIAL_STATE = {
+  page: 0,
+  profession: 'all',
+  element: 'all',
+  rarity: 'all',
+};
+
+const notFoundImage = new AttachmentBuilder('assets/images/pensive.png');
 
 /** @param {Characters} c */
 const getProfessionName = (c) => c.charData.profession.value;
@@ -67,15 +75,16 @@ const getCharacters = async (dcid) => {
 };
 
 /**
- * @param {string} stateStr - Format: page:profession:element
- * @returns {{ page: number, profession: string, element: string }}
+ * @param {string} stateStr - Format: page:profession:element[:rarity]
+ * @returns {{ page: number, profession: string, element: string, rarity: string }}
  */
 const parseState = (stateStr) => {
-  const [page = '0', profession = 'all', element = 'all'] = stateStr.split(':');
+  const [page = '0', profession = 'all', element = 'all', rarity = 'all'] = stateStr.split(':');
   return {
     page: Math.max(0, parseInt(page, 10) || 0),
     profession,
     element,
+    rarity,
   };
 };
 
@@ -108,38 +117,78 @@ const matchesElement = (char, element) => {
 };
 
 /**
+ * @param {Characters} char
+ * @param {string} rarity
+ * @returns {boolean}
+ */
+const matchesRarity = (char, rarity) => {
+  if (rarity === 'all') return true;
+  const value = Number(char.charData.rarity?.value ?? 0);
+  const target = Number(rarity);
+  if (!target) return true;
+  return value === target;
+};
+
+/**
  * @param {Characters[]} chars
- * @param {{ page: number, profession: string, element: string }} state
+ * @param {{ page: number, profession: string, element: string, rarity: string }} state
  * @returns {ContainerBuilder}
  */
-const buildCatalogContainer = (chars, { page, profession, element }) => {
-  const filtered = chars.filter(
-    (c) => matchesProfession(c, profession) && matchesElement(c, element)
-  );
+const buildCatalogContainer = (chars, { page, profession, element, rarity }) => {
+  const filtered = chars.filter((c) => {
+    return (
+      matchesProfession(c, profession) && matchesElement(c, element) && matchesRarity(c, rarity)
+    );
+  });
   const totalPages = Math.max(1, Math.ceil(filtered.length / CHARS_PER_PAGE));
   const clampedPage = Math.min(page, totalPages - 1);
   const pageChars = filtered.slice(
     clampedPage * CHARS_PER_PAGE,
     (clampedPage + 1) * CHARS_PER_PAGE
   );
-  const stateStr = `${clampedPage}:${profession}:${element}`;
+  const stateStr = `${clampedPage}:${profession}:${element}:${rarity}`;
 
   const container = new ContainerBuilder().addTextDisplayComponents((textDisplay) =>
-    textDisplay.setContent('# ▼// Owned Operators')
+    textDisplay.setContent('## ▼// Owned Operators')
+  );
+
+  container.addActionRowComponents((actionRow) =>
+    actionRow.addComponents(
+      new ButtonBuilder()
+        .setCustomId(`characters-rarity:*:${stateStr}`)
+        .setLabel('✦')
+        .setStyle(rarity === 'all' ? ButtonStyle.Success : ButtonStyle.Secondary),
+      new ButtonBuilder()
+        .setCustomId(`characters-rarity:4:${stateStr}`)
+        .setLabel('4 ✦')
+        .setStyle(rarity === '4' ? ButtonStyle.Success : ButtonStyle.Secondary),
+      new ButtonBuilder()
+        .setCustomId(`characters-rarity:5:${stateStr}`)
+        .setLabel('5 ✦')
+        .setStyle(rarity === '5' ? ButtonStyle.Success : ButtonStyle.Secondary),
+      new ButtonBuilder()
+        .setCustomId(`characters-rarity:6:${stateStr}`)
+        .setLabel('6 ✦')
+        .setStyle(rarity === '6' ? ButtonStyle.Success : ButtonStyle.Secondary)
+    )
   );
 
   container.addActionRowComponents((actionRow) =>
     actionRow.setComponents(
       new StringSelectMenuBuilder()
         .setCustomId(`characters-filter-opclass-${stateStr}`)
-        .setPlaceholder('Filter by operator class')
+        .setPlaceholder('Filter by profession')
         .addOptions(
-          { label: 'All', value: 'all' },
+          {
+            label: 'All Professions',
+            value: 'all',
+            emoji: '<:chevronalldirections:1482936485719310482>',
+          },
           ...Object.values(Profession).map((p) => ({
             emoji: ProfessionEmojis[/** @type {keyof typeof ProfessionEmojis} */ (p.name)],
             label: p.name,
             value: p.value,
-            default: p.value === profession ? true : false,
+            default: p.value === profession,
           }))
         )
     )
@@ -149,14 +198,18 @@ const buildCatalogContainer = (chars, { page, profession, element }) => {
     actionRow.setComponents(
       new StringSelectMenuBuilder()
         .setCustomId(`characters-filter-element-${stateStr}`)
-        .setPlaceholder('Filter by element type')
+        .setPlaceholder('Filter by element')
         .addOptions(
-          { label: 'All', value: 'all' },
+          {
+            label: 'All Elements',
+            value: 'all',
+            emoji: '<:chevronalldirections:1482936485719310482>',
+          },
           ...Object.values(ElementType).map((e) => ({
             emoji: PropertyEmojis[/** @type {keyof typeof PropertyEmojis} */ (e.name)],
             label: e.name,
             value: e.value,
-            default: e.value === element ? true : false,
+            default: e.value === element,
           }))
         )
     )
@@ -165,9 +218,17 @@ const buildCatalogContainer = (chars, { page, profession, element }) => {
   container.addSeparatorComponents((separator) => separator);
 
   if (pageChars.length === 0) {
-    container.addTextDisplayComponents((textDisplay) =>
-      textDisplay.setContent('No operators found.')
-    );
+    container
+      .addMediaGalleryComponents((mediaGallery) =>
+        mediaGallery.addItems({
+          media: {
+            url: 'attachment://pensive.png',
+          },
+        })
+      )
+      .addTextDisplayComponents((textDisplay) =>
+        textDisplay.setContent('## No matching operators found')
+      );
   } else {
     for (const op of pageChars) {
       const profName = getProfessionName(op);
@@ -196,15 +257,15 @@ const buildCatalogContainer = (chars, { page, profession, element }) => {
   if (filtered.length > CHARS_PER_PAGE) {
     container.addSeparatorComponents((separator) => separator);
 
-    const prevStateStr = `${Math.max(0, clampedPage - 1)}:${profession}:${element}`;
-    const nextStateStr = `${Math.min(totalPages - 1, clampedPage + 1)}:${profession}:${element}`;
+    const prevStateStr = `${Math.max(0, clampedPage - 1)}:${profession}:${element}:${rarity}`;
+    const nextStateStr = `${Math.min(totalPages - 1, clampedPage + 1)}:${profession}:${element}:${rarity}`;
 
     container.addActionRowComponents((actionRow) =>
       actionRow.addComponents(
         new ButtonBuilder()
           .setCustomId(`characters-page-prev-${prevStateStr}`)
           .setLabel('Previous')
-          .setStyle(clampedPage === 0 ? ButtonStyle.Secondary : ButtonStyle.Primary)
+          .setStyle(clampedPage === 0 ? ButtonStyle.Secondary : ButtonStyle.Success)
           .setDisabled(clampedPage === 0),
         new ButtonBuilder()
           .setCustomId(`characters-page-display`)
@@ -214,7 +275,7 @@ const buildCatalogContainer = (chars, { page, profession, element }) => {
         new ButtonBuilder()
           .setCustomId(`characters-page-next-${nextStateStr}`)
           .setLabel('Next')
-          .setStyle(clampedPage >= totalPages - 1 ? ButtonStyle.Secondary : ButtonStyle.Primary)
+          .setStyle(clampedPage >= totalPages - 1 ? ButtonStyle.Secondary : ButtonStyle.Success)
           .setDisabled(clampedPage >= totalPages - 1)
       )
     );
@@ -355,7 +416,7 @@ const parseButtonArgs = (args) => {
 export default {
   data: new SlashCommandBuilder()
     .setName('characters')
-    .setDescription('View your characters')
+    .setDescription('View all your obtained operators')
     .addStringOption((option) =>
       option.setName('name').setDescription('The name of the character').setAutocomplete(true)
     )
@@ -415,6 +476,7 @@ export default {
 
     await interaction.editReply({
       components: [buildCatalogContainer(characters.data, INITIAL_STATE)],
+      files: [notFoundImage],
       flags: [MessageFlags.IsComponentsV2],
     });
   },
@@ -447,13 +509,26 @@ export default {
       const stateStr = args[1];
       const state = stateStr ? parseState(stateStr) : INITIAL_STATE;
       const container = buildCatalogContainer(characters.data, state);
-      await interaction.editReply({ components: [container] });
+      await interaction.editReply({ components: [container], files: [notFoundImage] });
       return;
     }
 
     if (action === 'page' && payload) {
       const container = buildCatalogContainer(characters.data, parseState(payload));
-      await interaction.editReply({ components: [container] });
+      await interaction.editReply({ components: [container], files: [notFoundImage] });
+      return;
+    }
+
+    if (action === 'rarity' && payload) {
+      const [rarity, ...stateParts] = payload.split(':');
+      const baseState = parseState(stateParts.join(':'));
+      const state = {
+        ...baseState,
+        page: 0,
+        rarity: rarity === '*' ? 'all' : rarity,
+      };
+      const container = buildCatalogContainer(characters.data, state);
+      await interaction.editReply({ components: [container], files: [notFoundImage] });
       return;
     }
 
@@ -485,7 +560,12 @@ export default {
       return;
     }
 
-    const container = buildCatalogContainer(characters.data, { page: 0, profession, element });
-    await interaction.editReply({ components: [container] });
+    const container = buildCatalogContainer(characters.data, {
+      page: 0,
+      profession,
+      element,
+      rarity: state.rarity ?? 'all',
+    });
+    await interaction.editReply({ components: [container], files: [notFoundImage] });
   },
 };
