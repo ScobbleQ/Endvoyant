@@ -1,5 +1,6 @@
-import { codeBlock, ContainerBuilder, MessageFlags, SlashCommandBuilder } from 'discord.js';
-import { createEvent, getAccount, getEvents, getUser } from '../db/queries.js';
+import { MessageFlags, SlashCommandBuilder } from 'discord.js';
+import JSZip from 'jszip';
+import { Accounts, Users, Events } from '../db/queries.js';
 import { MessageTone, noUserContainer } from '../utils/containers.js';
 import { BotConfig } from '../../config.js';
 
@@ -11,7 +12,7 @@ export default {
     .setContexts([0, 1, 2]),
   /** @param {import("discord.js").ChatInputCommandInteraction} interaction */
   async execute(interaction) {
-    const user = await getUser(interaction.user.id);
+    const user = await Users.getByDcid(interaction.user.id);
     if (!user) {
       await interaction.reply({
         components: [noUserContainer({ tone: MessageTone.Formal })],
@@ -21,35 +22,33 @@ export default {
     }
 
     if (BotConfig.environment === 'production') {
-      await createEvent(interaction.user.id, {
+      await Events.create(interaction.user.id, {
         source: 'slash',
         action: 'data',
       });
     }
 
-    const container = new ContainerBuilder().addTextDisplayComponents((textDisplay) =>
-      textDisplay.setContent(`**User**\n${codeBlock('json', JSON.stringify(user, null, 2))}`)
-    );
+    const accounts = await Accounts.getByDcid(interaction.user.id);
+    const events = await Events.getUserEvents(interaction.user.id, null);
 
-    const account = await getAccount(interaction.user.id);
-    if (account) {
-      container.addTextDisplayComponents((textDisplay) =>
-        textDisplay.setContent(
-          `**Account**\n${codeBlock('json', JSON.stringify(account, null, 2))}`
-        )
-      );
+    const zip = new JSZip();
+    zip.file('user.json', JSON.stringify(user, null, 4));
+
+    if (accounts && accounts.length > 0) {
+      zip.file('accounts.json', JSON.stringify(accounts, null, 4));
     }
 
-    const events = await getEvents(interaction.user.id, 4);
     if (events && events.length > 0) {
-      container.addTextDisplayComponents((textDisplay) =>
-        textDisplay.setContent(`**Events**\n${codeBlock('json', JSON.stringify(events, null, 2))}`)
-      );
+      zip.file('events.json', JSON.stringify(events, null, 4));
     }
+
+    const zipBuffer = await zip.generateAsync({ type: 'nodebuffer', compression: 'DEFLATE' });
+    const filename = `endvoyant-${user.dcid}.zip`;
 
     await interaction.reply({
-      components: [container],
-      flags: [MessageFlags.Ephemeral, MessageFlags.IsComponentsV2],
+      content: 'Here is your requested data.',
+      files: [{ attachment: zipBuffer, name: filename }],
+      flags: [MessageFlags.Ephemeral],
     });
   },
 };

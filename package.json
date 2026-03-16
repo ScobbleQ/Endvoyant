@@ -39,6 +39,7 @@
     "discord.js": "^14.25.1",
     "dotenv": "^17.2.3",
     "drizzle-orm": "^0.45.1",
+    "jszip": "^3.10.1",
     "p-limit": "^7.2.0",
     "postgres": "^3.4.8",
     "user-agents": "^1.1.669"

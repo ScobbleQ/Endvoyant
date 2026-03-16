@@ -1,4 +1,4 @@
-import { and, desc, eq } from 'drizzle-orm';
+import { and, asc, desc, eq } from 'drizzle-orm';
 import { db } from './index.js';
 import { events } from './schema.js';
 
@@ -29,13 +29,14 @@ export class Events {
   /**
    * Get the last n events from the database matching the dcid
    * @param {string} dcid - The Discord ID
-   * @param {number | undefined} [limit=10]
+   * @param {number | null} limit - The number of events to get
    */
-  static async getUserEvents(dcid, limit = 10) {
+  static async getUserEvents(dcid, limit) {
+    const hasLimit = limit !== null;
     return await db.query.events.findMany({
       where: eq(events.dcid, dcid),
-      orderBy: desc(events.createdAt),
-      limit: limit ?? undefined,
+      orderBy: hasLimit ? desc(events.createdAt) : undefined,
+      limit: hasLimit ? limit : undefined,
     });
   }
 }

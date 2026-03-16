@@ -1,6 +1,6 @@
 import { eq } from 'drizzle-orm';
 import { db } from './index.js';
-import { users } from './schema.js';
+import { events, users } from './schema.js';
 
 export class Users {
   static async getAll() {
@@ -20,9 +20,6 @@ export class Users {
   static async getByDcid(dcid) {
     return await db.query.users.findFirst({
       where: eq(users.dcid, dcid),
-      with: {
-        accounts: true,
-      },
     });
   }
   /**
