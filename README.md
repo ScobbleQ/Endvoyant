@@ -20,6 +20,7 @@ A Discord bot for **Arknights: Endfield** with utility commands to enhance your 
   <img src="assets/github/signin.png" alt="Sign-in notification" height="280" />
   <img src="assets/github/profile.png" alt="Profile view" height="280" />
   <img src="assets/github/characters.png" alt="Character list catalog" height="280" />
+  <img src="assets/github/exploration.png" alt="Exploration overview" height="280">
 </div>
 
 ## Using the Bot
