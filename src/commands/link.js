@@ -10,7 +10,7 @@ import {
   TextInputBuilder,
   TextInputStyle,
 } from 'discord.js';
-import { createAccount, getUser } from '../db/queries.js';
+import { createEndfieldAccount, getUser } from '../db/queries.js';
 import {
   generateCredByCode,
   getBinding,
@@ -349,7 +349,7 @@ export default {
     }
 
     // Add the account to the database
-    await createAccount(interaction.user.id, {
+    await createEndfieldAccount(interaction.user.id, {
       nickname: selectedBinding.defaultRole.nickname,
       accountToken: loginData.token,
       hgId: loginData.hgId,

@@ -1,6 +1,6 @@
-import { ContainerBuilder, MessageFlags, SlashCommandBuilder, codeBlock } from 'discord.js';
+import { ContainerBuilder, MessageFlags, SlashCommandBuilder } from 'discord.js';
 import { BotConfig } from '../../config.js';
-import { createEvent, getAccount, getUser, updateEventMetadata } from '../db/queries.js';
+import { Accounts, Users, Events } from '../db/queries.js';
 import { attendance, generateCredByCode, grantOAuth } from '../skport/api/index.js';
 import {
   MessageTone,
@@ -18,7 +18,7 @@ export default {
     .setContexts([0, 1, 2]),
   /** @param {import("discord.js").ChatInputCommandInteraction} interaction */
   async execute(interaction) {
-    const user = await getUser(interaction.user.id);
+    const user = await Users.getByDcid(interaction.user.id);
     if (!user) {
       await interaction.reply({
         components: [noUserContainer({ tone: MessageTone.Formal })],
@@ -29,19 +29,20 @@ export default {
 
     await interaction.deferReply();
 
-    /** @type {{ id: number } | null} */
-    let event = null;
+    /** @type {number | null} */
+    let eventId = null;
     if (BotConfig.environment === 'production') {
-      event = await createEvent(interaction.user.id, {
+      const event = await Events.create(interaction.user.id, {
         source: 'slash',
         action: 'attendance',
       });
+      eventId = event[0]?.id ?? null;
     }
 
-    const skport = await getAccount(user.dcid);
+    const [skport] = await Accounts.getByDcid(user.dcid);
     if (!skport) {
       await interaction.editReply({
-        components: [textContainer('Please add a SKPort account with /add account first')],
+        components: [textContainer('Please add a SKPort account with `/link account` first')],
         flags: [MessageFlags.IsComponentsV2],
       });
       return;
@@ -85,7 +86,7 @@ export default {
     }
 
     // An event was created, update the metadata with the sign-in rewards
-    if (event && event.id) {
+    if (eventId) {
       /** @type {{ reward: { name: string, count: number, icon: string }, bonus?: { name: string, count: number, icon: string }[] }} */
       const metadata = {
         reward: {
@@ -104,7 +105,7 @@ export default {
         }));
       }
 
-      await updateEventMetadata(interaction.user.id, event.id, { metadata });
+      await Events.update(interaction.user.id, eventId, { metadata });
     }
 
     const attendanceContainer = new ContainerBuilder().addTextDisplayComponents((textDisplay) =>
