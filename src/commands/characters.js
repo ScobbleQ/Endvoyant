@@ -13,6 +13,8 @@ import { textContainer } from '../utils/containers.js';
 import { ProfessionEmojis, PropertyEmojis, RarityEmoji, Rarity2Emoji } from '../utils/emojis.js';
 import { getMaxLevel, getBreakthroughLevel } from '../utils/game.js';
 import { generateCharacterBuild } from '../utils/generateCharacterBuild.js';
+import { Events } from '../db/queries.js';
+import { BotConfig } from '../../config.js';
 
 /** @typedef {import('../skport/api/profile/cardDetail.js').Characters} Characters */
 
@@ -459,6 +461,13 @@ export default {
         flags: [MessageFlags.IsComponentsV2],
       });
       return;
+    }
+
+    if (BotConfig.environment === 'production') {
+      await Events.create(interaction.user.id, {
+        source: 'slash',
+        action: 'characters',
+      });
     }
 
     if (selected) {
