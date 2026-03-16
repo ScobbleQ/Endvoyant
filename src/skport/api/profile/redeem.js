@@ -8,7 +8,7 @@ export async function redeem(code, { channelId, serverId, token }) {
   const url = 'https://game-hub.gryphline.com/giftcode/api/redeem';
 
   const body = {
-    channelId: channelId, // "6" during testing
+    channelId: channelId,
     code: code,
     confirm: false,
     platform: 'iOS',
@@ -51,6 +51,9 @@ export async function redeem(code, { channelId, serverId, token }) {
     if (data.code !== 0) {
       return { status: -1, msg: data.msg };
     }
+
+    // not sure how success structure is like, so we log to gather data
+    console.log(data);
 
     return { status: 0, data: data.data };
   } catch (error) {
