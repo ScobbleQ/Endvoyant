@@ -1,11 +1,13 @@
-import { ContainerBuilder, MessageFlags, SlashCommandBuilder } from 'discord.js';
-import { getOperators } from '../skport/api/wiki/operators.js';
-import { getWeapons } from '../skport/api/wiki/weapons.js';
-import { getOrCreateCache, getOrSet } from '../skport/utils/cache.js';
-import { resolveSubType } from '../skport/utils/resolveSubType.js';
-import { maintenanceContainer } from '../utils/containers.js';
+// @ts-ignore
 
-/** @typedef {import('../skport/utils/typedef.js').WikiApiResponse} WikiApiResponse */
+import { ContainerBuilder, MessageFlags, SlashCommandBuilder } from 'discord.js';
+import { getOperators } from '../src/skport/api/wiki/operators.js';
+import { getWeapons } from '../src/skport/api/wiki/weapons.js';
+import { getOrCreateCache, getOrSet } from '../src/skport/utils/cache.js';
+import { resolveSubType } from '../src/skport/utils/resolveSubType.js';
+import { maintenanceContainer } from '../src/utils/containers.js';
+
+/** @typedef {import('../src/skport/utils/typedef.js').WikiApiResponse} WikiApiResponse */
 
 const WIKI_TTL = 5 * 60 * 1000; // 5 minutes
 const wikiCache = getOrCreateCache('wiki', WIKI_TTL);
@@ -68,12 +70,6 @@ export default {
   },
   /** @param {import("discord.js").ChatInputCommandInteraction} interaction */
   async execute(interaction) {
-    await interaction.reply({
-      components: [maintenanceContainer()],
-      flags: [MessageFlags.Ephemeral, MessageFlags.IsComponentsV2],
-    });
-    return;
-
     const category = interaction.options.getString('category');
     const query = interaction.options.getString('query');
 
