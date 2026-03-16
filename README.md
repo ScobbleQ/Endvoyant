@@ -29,7 +29,7 @@ A Discord bot for **Arknights: Endfield** with utility commands to enhance your 
 
 The bot is hosted with a centralized database and 24/7 uptime. Get instant updates and skip the setup.
 
-**[Invite Endministrator](https://discord.com/oauth2/authorize?client_id=1463987008157389005)** or join our [Community Server](https://discord.gg/5rUsSZTyf2)
+**[Invite Endvoyant](https://discord.com/oauth2/authorize?client_id=1463987008157389005)** or join our [Community Server](https://discord.gg/5rUsSZTyf2)
 
 ### Self-Hosted
 
@@ -44,8 +44,8 @@ The bot is hosted with a centralized database and 24/7 uptime. Get instant updat
 1. **Clone the repository**
 
    ```bash
-   git clone https://github.com/ScobbleQ/Endministrator.git
-   cd Endministrator
+   git clone https://github.com/ScobbleQ/Endvoyant.git
+   cd Endvoyant
    ```
 
 2. **Install dependencies**
