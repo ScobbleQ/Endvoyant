@@ -358,6 +358,7 @@ export default {
       serverId: selectedBinding.defaultRole.serverId,
       serverName: selectedBinding.defaultRole.serverName,
       roleId: selectedBinding.defaultRole.roleId,
+      isPrimary: true,
     });
 
     const successContainer = new ContainerBuilder().addTextDisplayComponents((textDisplay) =>

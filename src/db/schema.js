@@ -1,5 +1,6 @@
 import {
   pgTable,
+  uniqueIndex,
   foreignKey,
   uuid,
   text,
@@ -31,8 +32,12 @@ export const accounts = pgTable(
     enableNotif: boolean('enable_notif').default(true).notNull(),
     enableSignin: boolean('enable_signin').default(true).notNull(),
     enableRedeem: boolean('enable_redeem').default(true).notNull(),
+    isPrimary: boolean('is_primary').default(false).notNull(),
   },
   (table) => [
+    uniqueIndex('accounts_one_primary_per_user')
+      .using('btree', table.dcid.asc().nullsLast().op('text_ops'))
+      .where(sql`is_primary`),
     foreignKey({
       columns: [table.dcid],
       foreignColumns: [users.dcid],
