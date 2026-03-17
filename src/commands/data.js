@@ -30,21 +30,26 @@ export default {
 
     const accounts = await Accounts.getByDcid(interaction.user.id);
     const events = await Events.getUserEvents(interaction.user.id, null);
-    const attemptedCodes = await EfAttemptedCodes.getAccountAttemptedCodes(accounts[0].id);
+    const allAttemptedCodes = [];
 
     const zip = new JSZip();
     zip.file('user.json', JSON.stringify(user, null, 4));
 
     if (accounts && accounts.length > 0) {
       zip.file('accounts.json', JSON.stringify(accounts, null, 4));
+
+      for (const account of accounts) {
+        const attemptedCodes = await EfAttemptedCodes.getAccountAttemptedCodes(account.id);
+        allAttemptedCodes.push(...attemptedCodes);
+      }
     }
 
     if (events && events.length > 0) {
       zip.file('events.json', JSON.stringify(events, null, 4));
     }
 
-    if (attemptedCodes && attemptedCodes.length > 0) {
-      zip.file('attempted_codes.json', JSON.stringify(attemptedCodes, null, 4));
+    if (allAttemptedCodes && allAttemptedCodes.length > 0) {
+      zip.file('attempted_codes.json', JSON.stringify(allAttemptedCodes, null, 4));
     }
 
     const zipBuffer = await zip.generateAsync({ type: 'nodebuffer', compression: 'DEFLATE' });
