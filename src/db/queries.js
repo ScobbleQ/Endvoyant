@@ -1,6 +1,7 @@
 export * from './users.js';
 export * from './accounts.js';
 export * from './events.js';
+export * from './efAttemptedCodes.js';
 
 import { and, desc, eq } from 'drizzle-orm';
 import { db } from './index.js';

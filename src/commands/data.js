@@ -1,6 +1,6 @@
 import { MessageFlags, SlashCommandBuilder } from 'discord.js';
 import JSZip from 'jszip';
-import { Accounts, Users, Events } from '../db/queries.js';
+import { Accounts, Users, Events, EfAttemptedCodes } from '../db/queries.js';
 import { MessageTone, noUserContainer } from '../utils/containers.js';
 import { BotConfig } from '../../config.js';
 
@@ -30,6 +30,7 @@ export default {
 
     const accounts = await Accounts.getByDcid(interaction.user.id);
     const events = await Events.getUserEvents(interaction.user.id, null);
+    const attemptedCodes = await EfAttemptedCodes.getAccountAttemptedCodes(accounts[0].id);
 
     const zip = new JSZip();
     zip.file('user.json', JSON.stringify(user, null, 4));
@@ -40,6 +41,10 @@ export default {
 
     if (events && events.length > 0) {
       zip.file('events.json', JSON.stringify(events, null, 4));
+    }
+
+    if (attemptedCodes && attemptedCodes.length > 0) {
+      zip.file('attempted_codes.json', JSON.stringify(attemptedCodes, null, 4));
     }
 
     const zipBuffer = await zip.generateAsync({ type: 'nodebuffer', compression: 'DEFLATE' });

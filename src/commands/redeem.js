@@ -1,5 +1,5 @@
 import { MessageFlags, SlashCommandBuilder } from 'discord.js';
-import { Accounts, Users, Events } from '../db/queries.js';
+import { Accounts, Users, Events, EfAttemptedCodes } from '../db/queries.js';
 import { redeem, tokenByChannelToken, grantOAuth } from '../skport/api/index.js';
 import {
   MessageTone,
@@ -49,6 +49,15 @@ export default {
       return;
     }
 
+    const isCodeAttempted = await EfAttemptedCodes.isCodeAttempted(skport.id, code);
+    if (isCodeAttempted) {
+      await interaction.editReply({
+        components: [textContainer('This code has already been attempted')],
+        flags: [MessageFlags.IsComponentsV2],
+      });
+      return;
+    }
+
     const oauth = await grantOAuth({ token: skport.accountToken, appCode: 'd9f6dbb6bbd6bb33' });
     if (!oauth || oauth.status !== 0) {
       await interaction.editReply({
@@ -88,8 +97,10 @@ export default {
       return;
     }
 
+    await EfAttemptedCodes.create(skport.id, code);
+
     await interaction.editReply({
-      components: [textContainer('Coming soon...')],
+      components: [textContainer('Code redeemed successfully!')],
       flags: [MessageFlags.IsComponentsV2],
     });
   },
