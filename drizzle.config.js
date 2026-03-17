@@ -12,4 +12,14 @@ export default defineConfig({
   dbCredentials: {
     url: process.env.DATABASE_URL,
   },
+  schema: './drizzle/schema.ts',
+  migrations: {
+    path: './drizzle/migrations',
+    pattern: '*.ts',
+  },
+  verbose: true,
+  strict: true,
+  onSuccess: () => {
+    console.log('Migration successful');
+  },
 });
