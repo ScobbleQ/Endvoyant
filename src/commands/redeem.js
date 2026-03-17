@@ -78,8 +78,8 @@ export default {
     });
 
     if (!res || res.status !== 0) {
-      const code = JSON.parse(res.msg).code || res.status || -1;
-      const msg = JSON.parse(res.msg).message || res.msg || 'Unknown error';
+      const code = res.status || -1;
+      const msg = res.msg || 'Unknown error';
 
       await interaction.editReply({
         components: [textContainer(`### [${code}] ${msg}`)],
