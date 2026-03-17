@@ -80,6 +80,9 @@ export const efAttemptedCodes = pgTable(
       .defaultNow()
       .notNull(),
     status: smallint().notNull(),
+    lastAttemptedAt: timestamp('last_attempted_at', { withTimezone: true, mode: 'string' })
+      .defaultNow()
+      .notNull(),
   },
   (table) => [
     foreignKey({

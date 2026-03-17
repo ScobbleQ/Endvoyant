@@ -49,10 +49,10 @@ export default {
       return;
     }
 
-    const isCodeAttempted = await EfAttemptedCodes.isCodeAttempted(skport.id, code);
-    if (isCodeAttempted) {
+    const attemptedCode = await EfAttemptedCodes.getCodeByAid(skport.id, code);
+    if (attemptedCode?.status === 0) {
       await interaction.editReply({
-        components: [textContainer('This code has already been attempted')],
+        components: [textContainer('This code has already been successfully redeemed')],
         flags: [MessageFlags.IsComponentsV2],
       });
       return;
@@ -86,7 +86,11 @@ export default {
       token: channelToken.data.token,
     });
 
-    await EfAttemptedCodes.create(skport.id, code, res.status);
+    if (attemptedCode) {
+      await EfAttemptedCodes.updateStatus(skport.id, code, res.status);
+    } else {
+      await EfAttemptedCodes.create(skport.id, code, res.status);
+    }
 
     if (!res || res.status !== 0) {
       const code = res.status || -1;

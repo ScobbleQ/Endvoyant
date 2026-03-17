@@ -31,14 +31,25 @@ export class EfAttemptedCodes {
     });
   }
   /**
-   * Check if a code has been attempted by an account
+   * Get a code by account ID and code
    * @param {string} aid - The account ID
    * @param {string} code - The code
    */
-  static async isCodeAttempted(aid, code) {
-    const result = await db.query.efAttemptedCodes.findFirst({
+  static async getCodeByAid(aid, code) {
+    return await db.query.efAttemptedCodes.findFirst({
       where: and(eq(efAttemptedCodes.aid, aid), eq(efAttemptedCodes.code, code)),
     });
-    return result !== undefined;
+  }
+  /**
+   * Update the status of an attempted code
+   * @param {string} aid - The account ID
+   * @param {string} code - The code
+   * @param {number} status - The status
+   */
+  static async updateStatus(aid, code, status) {
+    return await db
+      .update(efAttemptedCodes)
+      .set({ status })
+      .where(and(eq(efAttemptedCodes.aid, aid), eq(efAttemptedCodes.code, code)));
   }
 }
