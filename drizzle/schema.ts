@@ -7,6 +7,7 @@ import {
   boolean,
   unique,
   bigint,
+  smallint,
   jsonb,
 } from 'drizzle-orm/pg-core';
 import { sql } from 'drizzle-orm';
@@ -78,6 +79,7 @@ export const efAttemptedCodes = pgTable(
     attemptedAt: timestamp('attempted_at', { withTimezone: true, mode: 'string' })
       .defaultNow()
       .notNull(),
+    status: smallint().notNull(),
   },
   (table) => [
     foreignKey({

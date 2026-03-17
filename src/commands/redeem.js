@@ -86,6 +86,8 @@ export default {
       token: channelToken.data.token,
     });
 
+    await EfAttemptedCodes.create(skport.id, code, res.status);
+
     if (!res || res.status !== 0) {
       const code = res.status || -1;
       const msg = res.msg || 'Unknown error';
@@ -96,8 +98,6 @@ export default {
       });
       return;
     }
-
-    await EfAttemptedCodes.create(skport.id, code);
 
     await interaction.editReply({
       components: [textContainer('Code redeemed successfully!')],

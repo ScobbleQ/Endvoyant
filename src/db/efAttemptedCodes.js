@@ -7,9 +7,10 @@ export class EfAttemptedCodes {
    * Create a new attempted code
    * @param {string} aid - The account ID
    * @param {string} code - The code
+   * @param {number} status - The status
    */
-  static async create(aid, code) {
-    return await db.insert(efAttemptedCodes).values({ aid, code });
+  static async create(aid, code, status) {
+    return await db.insert(efAttemptedCodes).values({ aid, code, status });
   }
   /**
    * Get all attempted codes by account ID
