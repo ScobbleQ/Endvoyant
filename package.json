@@ -2,7 +2,27 @@
   "name": "endministrator",
   "version": "1.0.0",
   "description": "Discord bot for Arkknights: Endfield",
+  "keywords": [
+    "arknights",
+    "bot",
+    "discord",
+    "endfield"
+  ],
+  "homepage": "https://github.com/ScobbleQ/Endministrator#readme",
+  "bugs": {
+    "url": "https://github.com/ScobbleQ/Endministrator/issues"
+  },
+  "license": "GPL-3.0-only",
+  "author": "ScobbleQ",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/ScobbleQ/Endministrator.git"
+  },
+  "type": "module",
   "main": "index.js",
+  "imports": {
+    "#/*": "./src/*"
+  },
   "scripts": {
     "test": "echo \"Error: no test specified\" && exit 1",
     "deploy": "node src/deploy.js",
@@ -15,23 +35,6 @@
     "db:pull": "drizzle-kit pull",
     "db:studio": "drizzle-kit studio"
   },
-  "repository": {
-    "type": "git",
-    "url": "git+https://github.com/ScobbleQ/Endministrator.git"
-  },
-  "keywords": [
-    "arknights",
-    "endfield",
-    "discord",
-    "bot"
-  ],
-  "author": "ScobbleQ",
-  "license": "GPL-3.0-only",
-  "type": "module",
-  "bugs": {
-    "url": "https://github.com/ScobbleQ/Endministrator/issues"
-  },
-  "homepage": "https://github.com/ScobbleQ/Endministrator#readme",
   "dependencies": {
     "@napi-rs/canvas": "^0.1.92",
     "axios": "^1.13.5",
@@ -46,7 +49,7 @@
   },
   "devDependencies": {
     "drizzle-kit": "^0.31.8",
-    "oxfmt": "^0.28.0",
+    "oxfmt": "^0.41.0",
     "oxlint": "^1.43.0"
   }
 }

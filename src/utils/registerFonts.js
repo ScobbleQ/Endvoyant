@@ -1,5 +1,5 @@
-import { GlobalFonts } from '@napi-rs/canvas';
 import { join } from 'node:path';
+import { GlobalFonts } from '@napi-rs/canvas';
 
 export function registerFonts() {
   GlobalFonts.registerFromPath(

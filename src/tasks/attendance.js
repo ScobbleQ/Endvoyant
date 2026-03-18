@@ -1,13 +1,8 @@
 import { ContainerBuilder, MessageFlags } from 'discord.js';
 import pLimit from 'p-limit';
-import {
-  createEvent,
-  getAccount,
-  getAllUsersWithAttendance,
-  updateAccount,
-} from '../db/queries.js';
-import { attendance, generateCredByCode, grantOAuth } from '../skport/api/index.js';
-import { privacy } from '../utils/privacy.js';
+import { createEvent, getAccount, getAllUsersWithAttendance, updateAccount } from '#/db/queries.js';
+import { attendance, generateCredByCode, grantOAuth } from '#/skport/api/index.js';
+import { privacy } from '#/utils/privacy.js';
 
 /**
  *

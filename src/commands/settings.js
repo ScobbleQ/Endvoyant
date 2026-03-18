@@ -5,9 +5,9 @@ import {
   ButtonBuilder,
   ButtonStyle,
 } from 'discord.js';
+import { errorContainer } from '#/components/containers/index.js';
+import { createEvent, getAccount, getUser } from '#/db/queries.js';
 import { BotConfig } from '../../config.js';
-import { createEvent, getAccount, getUser } from '../db/queries.js';
-import { errorContainer } from '../components/containers/index.js';
 
 export default {
   data: new SlashCommandBuilder()

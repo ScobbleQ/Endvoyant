@@ -1,3 +1,4 @@
+import { sql } from 'drizzle-orm';
 import {
   pgTable,
   uniqueIndex,
@@ -11,7 +12,6 @@ import {
   smallint,
   jsonb,
 } from 'drizzle-orm/pg-core';
-import { sql } from 'drizzle-orm';
 
 export const accounts = pgTable(
   'accounts',

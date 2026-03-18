@@ -5,8 +5,8 @@
   "semi": true,
   "singleQuote": true,
   "printWidth": 100,
-  "importOrder": ["<BUILTIN_MODULES>", "^discord.js$", "<THIRD_PARTY_MODULES>", "^[./]"],
-  "importOrderSortSpecifiers": true,
-  "experimentalSortPackageJson": false,
+  "sortImports": {
+    "newlinesBetween": false
+  },
   "ignorePatterns": ["node_modules/"]
 }

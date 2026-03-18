@@ -4,14 +4,13 @@ import {
   SectionBuilder,
   SlashCommandBuilder,
   TextDisplayBuilder,
-  codeBlock,
 } from 'discord.js';
+import { errorContainer, textContainer } from '#/components/containers/index.js';
+import { createEvent, getAccount, getUser } from '#/db/queries.js';
+import { getCachedCardDetail } from '#/skport/utils/getCachedCardDetail.js';
+import { ProfessionEmojis, ProfileEmojis, PropertyEmojis, RarityEmoji } from '#/utils/emojis.js';
+import { privacy } from '#/utils/privacy.js';
 import { BotConfig } from '../../config.js';
-import { createEvent, getAccount, getUser } from '../db/queries.js';
-import { getCachedCardDetail } from '../skport/utils/getCachedCardDetail.js';
-import { errorContainer, textContainer } from '../components/containers/index.js';
-import { ProfessionEmojis, ProfileEmojis, PropertyEmojis, RarityEmoji } from '../utils/emojis.js';
-import { privacy } from '../utils/privacy.js';
 
 export default {
   data: new SlashCommandBuilder()

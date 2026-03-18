@@ -7,13 +7,13 @@ import {
   StringSelectMenuBuilder,
   AttachmentBuilder,
 } from 'discord.js';
-import { ElementType, Profession } from '../skport/utils/constants.js';
-import { getCachedCardDetail } from '../skport/utils/getCachedCardDetail.js';
-import { errorContainer } from '../components/containers/index.js';
-import { ProfessionEmojis, PropertyEmojis, RarityEmoji, Rarity2Emoji } from '../utils/emojis.js';
-import { getMaxLevel, getBreakthroughLevel } from '../utils/game.js';
-import { generateCharacterBuild } from '../utils/generateCharacterBuild.js';
-import { Events } from '../db/queries.js';
+import { errorContainer } from '#/components/containers/index.js';
+import { Events } from '#/db/queries.js';
+import { ElementType, Profession } from '#/skport/utils/constants.js';
+import { getCachedCardDetail } from '#/skport/utils/getCachedCardDetail.js';
+import { ProfessionEmojis, PropertyEmojis, RarityEmoji, Rarity2Emoji } from '#/utils/emojis.js';
+import { getMaxLevel, getBreakthroughLevel } from '#/utils/game.js';
+import { generateCharacterBuild } from '#/utils/generateCharacterBuild.js';
 import { BotConfig } from '../../config.js';
 
 /** @typedef {import('../skport/api/profile/cardDetail.js').Characters} Characters */

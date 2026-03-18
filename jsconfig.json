@@ -2,6 +2,10 @@
   "compilerOptions": {
     "checkJs": true,
     "allowJs": true,
+    "baseUrl": ".",
+    "paths": {
+      "#/*": ["src/*"]
+    },
     "module": "NodeNext",
     "moduleResolution": "NodeNext",
     "target": "esnext",

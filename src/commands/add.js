@@ -7,13 +7,6 @@ import {
   TextInputBuilder,
   TextInputStyle,
 } from 'discord.js';
-import { Accounts, Events, Users } from '../db/queries.js';
-import {
-  generateCredByCode,
-  getBinding,
-  grantOAuth,
-  tokenByEmailPassword,
-} from '../skport/api/index.js';
 import {
   textContainer,
   errorContainer,
@@ -21,9 +14,15 @@ import {
   onboardingContainer,
   addAccountContainer,
   alreadyLinkedContainer,
-} from '../components/containers/index.js';
-import { parseCookieToken } from '../utils/parseCookieToken.js';
-import { sleep } from '../utils/sleep.js';
+} from '#/components/containers/index.js';
+import { Accounts, Events, Users } from '#/db/queries.js';
+import {
+  generateCredByCode,
+  getBinding,
+  grantOAuth,
+  tokenByEmailPassword,
+} from '#/skport/api/index.js';
+import { parseCookieToken, sleep } from '#/utils/index.js';
 import { BotConfig } from '../../config.js';
 
 export default {

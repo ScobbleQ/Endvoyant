@@ -10,8 +10,8 @@ import {
   EmbedBuilder,
   WebhookClient,
 } from 'discord.js';
+import { textContainer } from '#/components/containers/index.js';
 import { BotConfig } from '../../config.js';
-import { textContainer } from '../components/containers/index.js';
 
 export default {
   data: new SlashCommandBuilder()
