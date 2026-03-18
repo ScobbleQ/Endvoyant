@@ -1,4 +1,5 @@
 import { Events, MessageFlags } from 'discord.js';
+import { errorContainer } from '../components/containers/index.js';
 
 export default {
   name: Events.InteractionCreate,
@@ -133,8 +134,14 @@ async function reply(interaction, message) {
   }
 
   if (interaction.deferred || interaction.replied) {
-    await interaction.followUp({ content: message, flags: [MessageFlags.Ephemeral] });
+    await interaction.followUp({
+      components: [errorContainer(message)],
+      flags: [MessageFlags.Ephemeral, MessageFlags.IsComponentsV2],
+    });
   } else {
-    await interaction.reply({ content: message, flags: [MessageFlags.Ephemeral] });
+    await interaction.reply({
+      components: [errorContainer(message)],
+      flags: [MessageFlags.Ephemeral, MessageFlags.IsComponentsV2],
+    });
   }
 }
