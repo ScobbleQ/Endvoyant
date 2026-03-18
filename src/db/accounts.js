@@ -45,4 +45,24 @@ export class Accounts {
       where: eq(accounts[key], value),
     });
   }
+  /**
+   * Check if an account exists by HG ID, role ID and server ID
+   * @param {string} hgId - The HG ID
+   * @param {string} roleId - The role ID
+   * @param {string} serverId - The server ID
+   */
+  static async doesAccountExist(hgId, roleId, serverId) {
+    const result = await db.query.accounts.findFirst({
+      columns: {
+        dcid: true,
+      },
+      where: and(
+        eq(accounts.hgId, hgId),
+        eq(accounts.roleId, roleId),
+        eq(accounts.serverId, serverId)
+      ),
+    });
+
+    return { doesExist: result !== undefined, dcid: result?.dcid };
+  }
 }

@@ -1,4 +1,5 @@
-import { ContainerBuilder } from 'discord.js';
+import { ButtonBuilder, ButtonStyle, ContainerBuilder, TextDisplayBuilder } from 'discord.js';
+import { privacy } from './privacy.js';
 
 export const MessageTone = {
   Formal: 'formal',
