@@ -26,7 +26,7 @@ import UserAgent from 'user-agents';
  * @example
  * // Login and get OAuth token
  * const login = await tokenByEmailPassword('test@example.com', 'password');
- * const oauth = await grantOAuth({ token: login.data.token, type: 1 });
+ * const oauth = await grantOAuth({ token: login.data.token, appCode: '3dacefa138426cfe' });
  *
  * // Pass OAuth token to get list of bindings
  * const bindings = await bindingList({ token: oauth.data.token });

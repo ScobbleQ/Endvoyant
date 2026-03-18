@@ -5,7 +5,7 @@
  * @example
  * // Login with email and password
  * const login = await tokenByEmailPassword('test@example.com', 'password');
- * const oauth = await grantOAuth({ token: login.data.token, type: 1 });
+ * const oauth = await grantOAuth({ token: login.data.token, appCode: '3dacefa138426cfe' });
  *
  * // Get the UID of the endfield binding
  * const bindings = await bindingList({ token: oauth.data.token });

@@ -30,7 +30,7 @@ import { computeSign } from '#/skport/utils/computeSign.js';
  * @example
  * // Login with email and password
  * const login = await tokenByEmailPassword('test@example.com', 'password');
- * const oauth = await grantOAuth({ token: login.data.token, type: 0 });
+ * const oauth = await grantOAuth({ token: login.data.token, appCode: '6eb76d4e13aa36e6' });
  *
  * // Exchange the OAuth token for credentials
  * const cred = await generateCredByCode({ code: oauth.data.code });
