@@ -3,6 +3,7 @@ import pLimit from 'p-limit';
 import { createEvent, getAccount, getAllUsersWithAttendance, updateAccount } from '#/db/queries.js';
 import { attendance, generateCredByCode, grantOAuth } from '#/skport/api/index.js';
 import { privacy } from '#/utils/privacy.js';
+import logger from '#/logger';
 
 /**
  *
@@ -14,7 +15,7 @@ export async function checkAttendance(client) {
   await new Promise((resolve) => setTimeout(resolve, delay));
 
   const users = await getAllUsersWithAttendance();
-  console.info(`[Cron:Attendance] Checking attendance for ${users.length} users`);
+  logger.info(`[Cron:Attendance] Checking attendance for ${users.length} users`);
   const limit = pLimit(10);
 
   const task = users.map((u) =>
@@ -110,20 +111,20 @@ export async function checkAttendance(client) {
               flags: [MessageFlags.IsComponentsV2],
             });
           } catch (/** @type {any} */ error) {
-            console.error(`[Cron:Attendance] Failed to DM user ${u.dcid}:`, error);
+            logger.error(error, `[Cron:Attendance] Failed to DM user ${u.dcid}`);
             if (error.code === 50007) {
-              console.error(`[Cron:Attendance] User ${u.dcid} has DMs disabled`);
+              logger.error(`[Cron:Attendance] User ${u.dcid} has DMs disabled`);
               await updateAccount(u.dcid, skport.id, { key: 'enableNotif', value: false });
             }
           }
         }
       } catch (error) {
-        console.error(`[Cron:Attendance] Error checking attendance for user ${u.dcid}:`, error);
+        logger.error(error, `[Cron:Attendance] Error checking attendance for user ${u.dcid}`);
       }
     })
   );
 
   await Promise.allSettled(task).then(() => {
-    console.info('[Cron:Attendance] Attendance checked');
+    logger.info('[Cron:Attendance] Attendance checked');
   });
 }

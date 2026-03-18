@@ -36,17 +36,10 @@ export const TagTree = Object.freeze({
  */
 export function resolveSubType(subTypeId, value) {
   const category = TagTree[/** @type {keyof typeof TagTree} */ (subTypeId)];
-
-  if (!category) {
-    console.warn(`Unknown subTypeId: ${subTypeId}`);
-    return null;
-  }
+  if (!category) return null;
 
   const constantValue = category[/** @type {keyof typeof category} */ (value)];
-  if (!constantValue) {
-    console.warn(`Unknown value ${value} for subTypeId ${subTypeId}`);
-    return null;
-  }
+  if (!constantValue) return null;
 
   // Map subTypeId to category name
   // prettier-ignore

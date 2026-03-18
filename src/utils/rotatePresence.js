@@ -1,4 +1,5 @@
 import { ActivityType, PresenceUpdateStatus } from 'discord.js';
+import logger from '#/logger';
 
 /** @type {import('discord.js').PresenceData[]} */
 const presences = [
@@ -25,5 +26,5 @@ export function rotatePresence(client) {
   const presence = presences[random];
 
   client.user?.setPresence(presence);
-  console.info(`[Discord] Presence set to ${presence.activities?.[0].name}`);
+  logger.info(`[Discord] Presence set to ${presence.activities?.[0].name}`);
 }

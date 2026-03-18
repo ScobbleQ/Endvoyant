@@ -8,15 +8,19 @@
   "sortImports": {
     "newlinesBetween": false,
     "internalPattern": ["#/"],
-    "groups": ["builtin", "discordjs", "external", "internal", "config", "unknown"],
+    "groups": ["builtin", "discordjs", "external", "internal", "config", "logger", "unknown"],
     "customGroups": [
-      {
-        "groupName": "config",
-        "elementNamePattern": ["#/config", "#/config/*", "#/config/**"]
-      },
       {
         "groupName": "discordjs",
         "elementNamePattern": ["discord.js"]
+      },
+      {
+        "groupName": "config",
+        "elementNamePattern": ["#/config"]
+      },
+      {
+        "groupName": "logger",
+        "elementNamePattern": ["#/logger"]
       }
     ]
   },

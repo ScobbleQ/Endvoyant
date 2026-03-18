@@ -1,8 +1,9 @@
 import 'dotenv/config';
 import { defineConfig } from 'drizzle-kit';
+import logger from '#/logger';
 
 if (!process.env.DATABASE_URL) {
-  console.error('[Drizzle] DATABASE_URL is not set');
+  logger.error('[Drizzle] DATABASE_URL is not set');
   process.exit(1);
 }
 
@@ -20,6 +21,6 @@ export default defineConfig({
   verbose: true,
   strict: true,
   onSuccess: () => {
-    console.log('Migration successful');
+    logger.info('Migration successful');
   },
 });

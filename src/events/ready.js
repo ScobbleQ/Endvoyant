@@ -3,13 +3,14 @@ import { CronJob } from 'cron';
 import { checkAttendance, refreshLoginToken } from '#/tasks/index.js';
 import { registerFonts } from '#/utils/registerFonts.js';
 import { rotatePresence } from '#/utils/rotatePresence.js';
+import logger from '#/logger';
 
 export default {
   name: Events.ClientReady,
   once: true,
   /** @param {import("discord.js").Client} client */
   async execute(client) {
-    console.info(`[Discord] Logged in as ${client.user?.tag}`);
+    logger.info(`[Discord] Logged in as ${client.user?.tag}`);
     registerFonts();
 
     // Rotate the presence every 30 minutes
