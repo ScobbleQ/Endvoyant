@@ -1,6 +1,7 @@
 import pLimit from 'p-limit';
 import { getAccount, getAllUsers, getUser, updateAccount } from '#/db/queries.js';
 import { accountToken, generateCredByCode, grantOAuth } from '#/skport/api/index.js';
+import logger from '#/logger';
 
 /**
  *
@@ -10,7 +11,7 @@ export async function refreshLoginToken() {
   const delay = Math.floor(Math.random() * 56) * 60 * 1000;
   await new Promise((resolve) => setTimeout(resolve, delay));
 
-  console.info('[Cron:RefreshLoginToken] Refreshing login tokens for all users');
+  logger.info('[Cron:RefreshLoginToken] Refreshing login tokens for all users');
   const users = await getAllUsers();
   const limit = pLimit(10);
 
@@ -34,15 +35,15 @@ export async function refreshLoginToken() {
 
         await updateAccount(u.dcid, skport.id, { key: 'accountToken', value: token.data });
       } catch (error) {
-        console.error(
-          `[Cron:RefreshLoginToken] Error refreshing login token for user ${u.dcid}:`,
-          error
+        logger.error(
+          error,
+          `[Cron:RefreshLoginToken] Error refreshing login token for user ${u.dcid}`
         );
       }
     })
   );
 
   await Promise.allSettled(task).then(() => {
-    console.info('[Cron:RefreshLoginToken] Login tokens refreshed');
+    logger.info('[Cron:RefreshLoginToken] Login tokens refreshed');
   });
 }

@@ -2,6 +2,7 @@ import { readdirSync } from 'node:fs';
 import { join } from 'node:path';
 import { REST, Routes } from 'discord.js';
 import { BotConfig } from '#/config';
+import logger from '#/logger';
 
 /** @type {import("discord.js").SlashCommandBuilder[]} */
 const commands = [];
@@ -16,7 +17,7 @@ for (const file of commandFolders) {
   if (command.default && 'data' in command.default && 'execute' in command.default) {
     commands.push(command.default.data.toJSON());
   } else {
-    console.warn(`[Discord] Command at ${filePath} is missing a data or execute property.`);
+    logger.warn(`[Discord] Command at ${filePath} is missing a data or execute property.`);
   }
 }
 
@@ -24,7 +25,7 @@ const rest = new REST().setToken(BotConfig.token);
 
 try {
   const data = await rest.put(Routes.applicationCommands(BotConfig.clientId), { body: commands });
-  console.info(`[Discord] Successfully deployed ${Array.isArray(data) ? data.length : 0} commands`);
+  logger.info(`[Discord] Successfully deployed ${Array.isArray(data) ? data.length : 0} commands`);
 } catch (error) {
-  console.error('[Discord] Error deploying commands:', error);
+  logger.error(error, '[Discord] Error deploying commands');
 }

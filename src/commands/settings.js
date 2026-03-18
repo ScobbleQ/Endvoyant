@@ -8,6 +8,7 @@ import {
 import { errorContainer } from '#/components/containers/index.js';
 import { createEvent, getAccount, getUser } from '#/db/queries.js';
 import { BotConfig } from '#/config';
+import logger from '#/logger';
 
 export default {
   data: new SlashCommandBuilder()
@@ -34,7 +35,7 @@ export default {
     }
 
     const account = await getAccount(interaction.user.id);
-    console.log(account);
+    logger.debug(account);
 
     const container = new ContainerBuilder();
     container.addTextDisplayComponents((textDisplay) =>

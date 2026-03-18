@@ -2,6 +2,7 @@ import { readdirSync } from 'node:fs';
 import { join } from 'node:path';
 import { Client, Collection, GatewayIntentBits } from 'discord.js';
 import { BotConfig } from '#/config';
+import logger from '#/logger';
 
 const client =
   /** @type {Client & { commands: Collection<string, any> }} */
@@ -23,7 +24,7 @@ for (const file of commandFolders) {
   if ('data' in command.default && 'execute' in command.default) {
     client.commands.set(command.default.data.name, command.default);
   } else {
-    console.warn(`[Discord] Command at ${filePath} is missing a data or execute property.`);
+    logger.warn(`[Discord] Command at ${filePath} is missing a data or execute property.`);
   }
 }
 
@@ -42,5 +43,5 @@ for (const file of eventFolders) {
 }
 
 client.login(BotConfig.token).catch((error) => {
-  console.error('[Discord] Error logging in:', error);
+  logger.error('[Discord] Error logging in:', error);
 });

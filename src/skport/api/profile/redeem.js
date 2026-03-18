@@ -1,3 +1,5 @@
+import logger from '#/logger';
+
 /**
  *
  * @param {string} code
@@ -53,7 +55,7 @@ export async function redeem(code, { channelId, serverId, token }) {
     }
 
     // not sure how success structure is like, so we log to gather data
-    console.log(data);
+    logger.debug(data);
 
     return { status: 0, data: data.data };
   } catch (error) {
