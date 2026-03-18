@@ -96,15 +96,20 @@ The bot is hosted with a centralized database and 24/7 uptime. Get instant updat
 
 ## Commands
 
-| Command         | Description                                         |
-| --------------- | --------------------------------------------------- |
-| `/about`        | About the bot                                       |
-| `/attendance`   | Claim daily sign-in rewards manually                |
-| `/characters`   | Browse all Endfield characters                      |
-| `/link account` | Link your SKPort account to Discord                 |
-| `/profile`      | View your in-game profile                           |
-| `/settings`     | Configure the bot settings                          |
-| `/wiki`         | Search the Endfield wiki (operators, weapons, etc.) |
+| Command        | Description                              |
+| -------------- | ---------------------------------------- |
+| `/about`       | About the bot                            |
+| `/add account` | Add your SKPort account to Discord       |
+| `/attendance`  | Claim daily sign-in rewards              |
+| `/characters`  | Show your obtained operators             |
+| `/data`        | Get your account data (ZIP)              |
+| `/development` | Show regional development                |
+| `/enka`        | View profile via Enka.Network            |
+| `/exploration` | Show region exploration progress         |
+| `/profile`     | View your in-game profile                |
+| `/redeem`      | Redeem Endfield codes                    |
+| `/settings`    | View settings (coming soon)              |
+| `/survey`      | Open feedback surveys to improve the bot |
 
 ## Contributing
 
