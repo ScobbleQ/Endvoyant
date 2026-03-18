@@ -7,7 +7,7 @@ import {
 } from 'discord.js';
 import { BotConfig } from '../../config.js';
 import { createEvent, getAccount, getUser } from '../db/queries.js';
-import { MessageTone, noUserContainer } from '../utils/containers.js';
+import { errorContainer } from '../components/containers/index.js';
 
 export default {
   data: new SlashCommandBuilder()
@@ -20,7 +20,7 @@ export default {
     const user = await getUser(interaction.user.id);
     if (!user) {
       await interaction.reply({
-        components: [noUserContainer({ tone: MessageTone.Formal })],
+        components: [errorContainer('Please add an account with `/add account` to continue.')],
         flags: [MessageFlags.Ephemeral, MessageFlags.IsComponentsV2],
       });
       return;

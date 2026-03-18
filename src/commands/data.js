@@ -1,8 +1,8 @@
 import { MessageFlags, SlashCommandBuilder } from 'discord.js';
 import JSZip from 'jszip';
 import { Accounts, Users, Events, EfAttemptedCodes } from '../db/queries.js';
-import { MessageTone, noUserContainer } from '../utils/containers.js';
 import { BotConfig } from '../../config.js';
+import { errorContainer } from '../components/containers/index.js';
 
 export default {
   data: new SlashCommandBuilder()
@@ -15,7 +15,7 @@ export default {
     const user = await Users.getByDcid(interaction.user.id);
     if (!user) {
       await interaction.reply({
-        components: [noUserContainer({ tone: MessageTone.Formal })],
+        components: [errorContainer('Please add an account with `/add account` to continue.')],
         flags: [MessageFlags.Ephemeral, MessageFlags.IsComponentsV2],
       });
       return;

@@ -9,7 +9,7 @@ import {
 } from 'discord.js';
 import { ElementType, Profession } from '../skport/utils/constants.js';
 import { getCachedCardDetail } from '../skport/utils/getCachedCardDetail.js';
-import { textContainer } from '../utils/containers.js';
+import { errorContainer } from '../components/containers/index.js';
 import { ProfessionEmojis, PropertyEmojis, RarityEmoji, Rarity2Emoji } from '../utils/emojis.js';
 import { getMaxLevel, getBreakthroughLevel } from '../utils/game.js';
 import { generateCharacterBuild } from '../utils/generateCharacterBuild.js';
@@ -457,7 +457,7 @@ export default {
       const msg = JSON.parse(characters.msg).message || characters.msg || 'Unknown error';
 
       await interaction.editReply({
-        components: [textContainer(`### [${code}] ${msg}`)],
+        components: [errorContainer(`[${code}] ${msg}`)],
         flags: [MessageFlags.IsComponentsV2],
       });
       return;
@@ -473,7 +473,7 @@ export default {
     if (selected) {
       const character = characters.data.find((c) => c.charData.id === selected);
       if (!character) {
-        await interaction.editReply({ components: [textContainer('Character not found')] });
+        await interaction.editReply({ components: [errorContainer('Character not found')] });
         return;
       }
       await interaction.editReply({
@@ -497,7 +497,7 @@ export default {
     const characters = await getCharacters(interaction.user.id);
     if (!characters || characters.status !== 0) {
       await interaction.editReply({
-        components: [textContainer(characters?.msg || 'Failed to load characters')],
+        components: [errorContainer(characters?.msg || 'Failed to load characters')],
       });
       return;
     }
@@ -564,7 +564,7 @@ export default {
     const characters = await getCharacters(interaction.user.id);
     if (!characters || characters.status !== 0) {
       await interaction.editReply({
-        components: [textContainer(characters?.msg || 'Failed to load characters')],
+        components: [errorContainer(characters?.msg || 'Failed to load characters')],
       });
       return;
     }

@@ -11,7 +11,7 @@ import {
   WebhookClient,
 } from 'discord.js';
 import { BotConfig } from '../../config.js';
-import { textContainer } from '../utils/containers.js';
+import { textContainer } from '../components/containers/index.js';
 
 export default {
   data: new SlashCommandBuilder()

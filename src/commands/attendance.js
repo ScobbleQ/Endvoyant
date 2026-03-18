@@ -2,13 +2,7 @@ import { ContainerBuilder, MessageFlags, SlashCommandBuilder } from 'discord.js'
 import { BotConfig } from '../../config.js';
 import { Accounts, Users, Events } from '../db/queries.js';
 import { attendance, generateCredByCode, grantOAuth } from '../skport/api/index.js';
-import {
-  MessageTone,
-  credErrorContainer,
-  noUserContainer,
-  oauthErrorContainer,
-  textContainer,
-} from '../utils/containers.js';
+import { errorContainer } from '../components/containers/index.js';
 
 export default {
   data: new SlashCommandBuilder()
@@ -21,7 +15,7 @@ export default {
     const user = await Users.getByDcid(interaction.user.id);
     if (!user) {
       await interaction.reply({
-        components: [noUserContainer({ tone: MessageTone.Formal })],
+        components: [errorContainer('Please add an account with `/add account` to continue.')],
         flags: [MessageFlags.Ephemeral, MessageFlags.IsComponentsV2],
       });
       return;
@@ -42,7 +36,7 @@ export default {
     const [skport] = await Accounts.getByDcid(user.dcid);
     if (!skport) {
       await interaction.editReply({
-        components: [textContainer('Please add a SKPort account with `/link account` first')],
+        components: [errorContainer('Please add an account with `/add account` to continue.')],
         flags: [MessageFlags.IsComponentsV2],
       });
       return;
@@ -51,7 +45,7 @@ export default {
     const oauth = await grantOAuth({ token: skport.accountToken, appCode: '6eb76d4e13aa36e6' });
     if (!oauth || oauth.status !== 0) {
       await interaction.editReply({
-        components: [oauthErrorContainer()],
+        components: [errorContainer('Failed to grant OAuth token')],
         flags: [MessageFlags.IsComponentsV2],
       });
       return;
@@ -60,7 +54,7 @@ export default {
     const cred = await generateCredByCode({ code: oauth.data.code });
     if (!cred || cred.status !== 0) {
       await interaction.editReply({
-        components: [credErrorContainer()],
+        components: [errorContainer('Failed to generate credentials')],
         flags: [MessageFlags.IsComponentsV2],
       });
       return;
@@ -78,7 +72,7 @@ export default {
       const msg = JSON.parse(signin.msg).message || signin.msg || 'Unknown error';
 
       await interaction.editReply({
-        components: [textContainer(`### [${code}] ${msg}`)],
+        components: [errorContainer(`[${code}] ${msg}`)],
         flags: [MessageFlags.IsComponentsV2],
       });
       return;

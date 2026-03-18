@@ -1,12 +1,7 @@
 import { MessageFlags, SlashCommandBuilder } from 'discord.js';
 import { Accounts, Users, Events, EfAttemptedCodes } from '../db/queries.js';
 import { redeem, tokenByChannelToken, grantOAuth } from '../skport/api/index.js';
-import {
-  MessageTone,
-  noUserContainer,
-  oauthErrorContainer,
-  textContainer,
-} from '../utils/containers.js';
+import { errorContainer, textContainer, warningContainer } from '../components/containers/index.js';
 import { BotConfig } from '../../config.js';
 
 export default {
@@ -25,7 +20,7 @@ export default {
     const user = await Users.getByDcid(interaction.user.id);
     if (!user) {
       await interaction.reply({
-        components: [noUserContainer({ tone: MessageTone.Formal })],
+        components: [errorContainer('Please add an account with `/add account` to continue.')],
         flags: [MessageFlags.Ephemeral, MessageFlags.IsComponentsV2],
       });
       return;
@@ -43,7 +38,7 @@ export default {
     const [skport] = await Accounts.getByDcid(user.dcid);
     if (!skport) {
       await interaction.editReply({
-        components: [textContainer('Please add a SKPort account with `/link account` first')],
+        components: [errorContainer('Please add an account with `/add account` to continue.')],
         flags: [MessageFlags.IsComponentsV2],
       });
       return;
@@ -52,7 +47,7 @@ export default {
     const attemptedCode = await EfAttemptedCodes.getCodeByAid(skport.id, code);
     if (attemptedCode?.status === 0) {
       await interaction.editReply({
-        components: [textContainer('This code has already been successfully redeemed')],
+        components: [warningContainer('This code has already been successfully redeemed')],
         flags: [MessageFlags.IsComponentsV2],
       });
       return;
@@ -61,7 +56,7 @@ export default {
     const oauth = await grantOAuth({ token: skport.accountToken, appCode: 'd9f6dbb6bbd6bb33' });
     if (!oauth || oauth.status !== 0) {
       await interaction.editReply({
-        components: [oauthErrorContainer()],
+        components: [errorContainer('Failed to grant OAuth token')],
         flags: [MessageFlags.IsComponentsV2],
       });
       return;
@@ -74,7 +69,7 @@ export default {
 
     if (!channelToken || channelToken.status !== 0) {
       await interaction.editReply({
-        components: [textContainer(channelToken?.msg || 'Failed to get token by channel token')],
+        components: [errorContainer(channelToken?.msg || 'Failed to get token by channel token')],
         flags: [MessageFlags.IsComponentsV2],
       });
       return;
@@ -97,7 +92,7 @@ export default {
       const msg = res.msg || 'Unknown error';
 
       await interaction.editReply({
-        components: [textContainer(`### [${code}] ${msg}`)],
+        components: [errorContainer(`[${code}] ${msg}`)],
         flags: [MessageFlags.IsComponentsV2],
       });
       return;

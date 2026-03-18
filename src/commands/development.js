@@ -6,7 +6,7 @@ import {
 } from 'discord.js';
 import { createEvent, getAccount, getUser } from '../db/queries.js';
 import { getCachedCardDetail } from '../skport/utils/getCachedCardDetail.js';
-import { MessageTone, noUserContainer, textContainer } from '../utils/containers.js';
+import { errorContainer, textContainer } from '../components/containers/index.js';
 import { BotConfig } from '../../config.js';
 
 /**
@@ -90,7 +90,7 @@ export default {
     const user = await getUser(interaction.user.id);
     if (!user) {
       await interaction.reply({
-        components: [noUserContainer({ tone: MessageTone.Formal })],
+        components: [errorContainer('Please add an account with `/add account` to continue.')],
         flags: [MessageFlags.Ephemeral, MessageFlags.IsComponentsV2],
       });
       return;
@@ -106,7 +106,7 @@ export default {
     const account = await getAccount(interaction.user.id);
     if (!account) {
       await interaction.reply({
-        components: [textContainer('Please link a SKPort account with /link account first')],
+        components: [errorContainer('Please add an account with `/add account` to continue.')],
         flags: [MessageFlags.Ephemeral, MessageFlags.IsComponentsV2],
       });
       return;
@@ -123,7 +123,7 @@ export default {
       const msg = JSON.parse(profile.msg).message || profile.msg || 'Unknown error';
 
       await interaction.editReply({
-        components: [textContainer(`### [${code}] ${msg}`)],
+        components: [errorContainer(`[${code}] ${msg}`)],
         flags: [MessageFlags.IsComponentsV2],
       });
       return;

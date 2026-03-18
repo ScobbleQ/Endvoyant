@@ -1,11 +1,6 @@
 import { MessageFlags, SlashCommandBuilder } from 'discord.js';
 import { createEvent, getAccount, getUser } from '../db/queries.js';
-import {
-  maintenanceContainer,
-  MessageTone,
-  noUserContainer,
-  textContainer,
-} from '../utils/containers.js';
+import { errorContainer, warningContainer } from '../components/containers/index.js';
 import { BotConfig } from '../../config.js';
 
 export default {
@@ -24,7 +19,7 @@ export default {
     const user = await getUser(interaction.user.id);
     if (!user && !uid) {
       await interaction.reply({
-        components: [noUserContainer({ tone: MessageTone.Formal })],
+        components: [errorContainer('Please add an account with `/add account` to continue.')],
         flags: [MessageFlags.Ephemeral, MessageFlags.IsComponentsV2],
       });
       return;
@@ -34,7 +29,7 @@ export default {
       const account = await getAccount(interaction.user.id);
       if (!account) {
         await interaction.reply({
-          components: [textContainer('Please link a SKPort account with /link account first')],
+          components: [errorContainer('Please add an account with `/add account` to continue.')],
           flags: [MessageFlags.Ephemeral, MessageFlags.IsComponentsV2],
         });
         return;
@@ -52,7 +47,7 @@ export default {
 
     await interaction.reply({
       components: [
-        textContainer(
+        warningContainer(
           `Enka integration will be available once Enka.Network API is stable.\n${uid}`
         ),
       ],
