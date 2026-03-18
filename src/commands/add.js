@@ -327,7 +327,7 @@ export default {
       serverId: selectedBinding.defaultRole.serverId,
       serverName: selectedBinding.defaultRole.serverName,
       roleId: selectedBinding.defaultRole.roleId,
-      isPrimary: true,
+      isPrimary: (await Accounts.getByDcid(interaction.user.id))?.length === 0,
     });
 
     await interaction.editReply({
