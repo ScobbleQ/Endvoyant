@@ -1,5 +1,5 @@
 import UserAgent from 'user-agents';
-import { computeSign } from '../../utils/computeSign.js';
+import { computeSign } from '#/skport/utils/computeSign.js';
 
 /**
  * @typedef {Object} AttendanceResponse

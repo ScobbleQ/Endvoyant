@@ -7,7 +7,7 @@ import {
 } from 'discord.js';
 import { errorContainer } from '#/components/containers/index.js';
 import { createEvent, getAccount, getUser } from '#/db/queries.js';
-import { BotConfig } from '../../config.js';
+import { BotConfig } from '#/config';
 
 export default {
   data: new SlashCommandBuilder()

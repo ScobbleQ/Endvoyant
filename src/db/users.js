@@ -1,6 +1,6 @@
 import { eq } from 'drizzle-orm';
 import { db } from './index.js';
-import { events, users } from './schema.js';
+import { users } from './schema.js';
 
 export class Users {
   static async getAll() {

@@ -1,4 +1,4 @@
-import { computeSign } from '../../utils/computeSign.js';
+import { computeSign } from '#/skport/utils/computeSign.js';
 
 /**
  * @typedef {Object} CardDetail

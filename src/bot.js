@@ -1,7 +1,7 @@
 import { readdirSync } from 'node:fs';
 import { join } from 'node:path';
 import { Client, Collection, GatewayIntentBits } from 'discord.js';
-import { BotConfig } from '../config.js';
+import { BotConfig } from '#/config';
 
 const client =
   /** @type {Client & { commands: Collection<string, any> }} */

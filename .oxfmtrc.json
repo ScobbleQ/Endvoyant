@@ -6,7 +6,19 @@
   "singleQuote": true,
   "printWidth": 100,
   "sortImports": {
-    "newlinesBetween": false
+    "newlinesBetween": false,
+    "internalPattern": ["#/"],
+    "groups": ["builtin", "discordjs", "external", "internal", "config", "unknown"],
+    "customGroups": [
+      {
+        "groupName": "config",
+        "elementNamePattern": ["#/config", "#/config/*", "#/config/**"]
+      },
+      {
+        "groupName": "discordjs",
+        "elementNamePattern": ["discord.js"]
+      }
+    ]
   },
   "ignorePatterns": ["node_modules/"]
 }

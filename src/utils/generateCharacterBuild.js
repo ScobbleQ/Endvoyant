@@ -1,5 +1,5 @@
-import { createCanvas, loadImage } from '@napi-rs/canvas';
 import { AttachmentBuilder } from 'discord.js';
+import { createCanvas, loadImage } from '@napi-rs/canvas';
 
 /** @typedef {import('../skport/api/profile/cardDetail.js').Characters} Characters */
 /** @typedef {import('../skport/api/profile/cardDetail.js').Weapon} Weapon */

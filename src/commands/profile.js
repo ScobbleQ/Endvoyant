@@ -10,7 +10,7 @@ import { createEvent, getAccount, getUser } from '#/db/queries.js';
 import { getCachedCardDetail } from '#/skport/utils/getCachedCardDetail.js';
 import { ProfessionEmojis, ProfileEmojis, PropertyEmojis, RarityEmoji } from '#/utils/emojis.js';
 import { privacy } from '#/utils/privacy.js';
-import { BotConfig } from '../../config.js';
+import { BotConfig } from '#/config';
 
 export default {
   data: new SlashCommandBuilder()

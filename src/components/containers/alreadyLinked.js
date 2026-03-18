@@ -1,5 +1,5 @@
 import { ContainerBuilder } from 'discord.js';
-import { privacy } from '../../utils/privacy.js';
+import { privacy } from '#/utils/privacy.js';
 
 /**
  * Container for when an account is already to a Discord profile

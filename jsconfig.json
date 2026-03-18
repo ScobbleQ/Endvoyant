@@ -4,7 +4,8 @@
     "allowJs": true,
     "baseUrl": ".",
     "paths": {
-      "#/*": ["src/*"]
+      "#/*": ["src/*"],
+      "#/config": ["config.js"]
     },
     "module": "NodeNext",
     "moduleResolution": "NodeNext",

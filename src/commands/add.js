@@ -23,7 +23,7 @@ import {
   tokenByEmailPassword,
 } from '#/skport/api/index.js';
 import { parseCookieToken, sleep } from '#/utils/index.js';
-import { BotConfig } from '../../config.js';
+import { BotConfig } from '#/config';
 
 export default {
   data: new SlashCommandBuilder()

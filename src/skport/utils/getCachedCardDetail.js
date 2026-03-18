@@ -1,4 +1,4 @@
-import { getAccount, getUser } from '../../db/queries.js';
+import { getAccount, getUser } from '#/db/queries.js';
 import { generateCredByCode, grantOAuth } from '../api/auth/index.js';
 import { cardDetail } from '../api/profile/index.js';
 import { getOrCreateCache, getOrSet } from './cache.js';

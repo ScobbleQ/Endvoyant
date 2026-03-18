@@ -1,5 +1,5 @@
-import { CronJob } from 'cron';
 import { Events } from 'discord.js';
+import { CronJob } from 'cron';
 import { checkAttendance, refreshLoginToken } from '#/tasks/index.js';
 import { registerFonts } from '#/utils/registerFonts.js';
 import { rotatePresence } from '#/utils/rotatePresence.js';

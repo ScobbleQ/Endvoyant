@@ -7,7 +7,7 @@ import {
 import { errorContainer, textContainer } from '#/components/containers/index.js';
 import { createEvent, getAccount, getUser } from '#/db/queries.js';
 import { getCachedCardDetail } from '#/skport/utils/getCachedCardDetail.js';
-import { BotConfig } from '../../config.js';
+import { BotConfig } from '#/config';
 
 /**
  * @param {import('../skport/api/profile/cardDetail.js').CardDetail['domain']} domains

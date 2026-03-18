@@ -21,7 +21,8 @@
   "type": "module",
   "main": "index.js",
   "imports": {
-    "#/*": "./src/*"
+    "#/*": "./src/*",
+    "#/config": "./config.js"
   },
   "scripts": {
     "test": "echo \"Error: no test specified\" && exit 1",

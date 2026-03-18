@@ -1,5 +1,5 @@
 import { Events, MessageFlags } from 'discord.js';
-import { errorContainer } from '../components/containers/index.js';
+import { errorContainer } from '#/components/containers/index.js';
 
 export default {
   name: Events.InteractionCreate,

@@ -14,7 +14,7 @@ import { getCachedCardDetail } from '#/skport/utils/getCachedCardDetail.js';
 import { ProfessionEmojis, PropertyEmojis, RarityEmoji, Rarity2Emoji } from '#/utils/emojis.js';
 import { getMaxLevel, getBreakthroughLevel } from '#/utils/game.js';
 import { generateCharacterBuild } from '#/utils/generateCharacterBuild.js';
-import { BotConfig } from '../../config.js';
+import { BotConfig } from '#/config';
 
 /** @typedef {import('../skport/api/profile/cardDetail.js').Characters} Characters */
 

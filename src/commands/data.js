@@ -2,7 +2,7 @@ import { MessageFlags, SlashCommandBuilder } from 'discord.js';
 import JSZip from 'jszip';
 import { errorContainer } from '#/components/containers/index.js';
 import { Accounts, Users, Events, EfAttemptedCodes } from '#/db/queries.js';
-import { BotConfig } from '../../config.js';
+import { BotConfig } from '#/config';
 
 export default {
   data: new SlashCommandBuilder()

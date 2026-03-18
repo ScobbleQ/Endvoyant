@@ -1,7 +1,7 @@
 import { readdirSync } from 'node:fs';
 import { join } from 'node:path';
 import { REST, Routes } from 'discord.js';
-import { BotConfig } from '../config.js';
+import { BotConfig } from '#/config';
 
 /** @type {import("discord.js").SlashCommandBuilder[]} */
 const commands = [];
