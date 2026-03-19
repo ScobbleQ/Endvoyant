@@ -1,9 +1,8 @@
 import 'dotenv/config';
 import { defineConfig } from 'drizzle-kit';
-import logger from '#/logger';
 
 if (!process.env.DATABASE_URL) {
-  logger.error('[Drizzle] DATABASE_URL is not set');
+  console.error('[Drizzle] DATABASE_URL is not set');
   process.exit(1);
 }
 
