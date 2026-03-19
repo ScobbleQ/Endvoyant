@@ -266,6 +266,16 @@ export default {
       return;
     }
 
+    // Max of 5 accounts per user
+    const accounts = await Accounts.getByDcid(interaction.user.id);
+    if (accounts.length >= 5) {
+      await interaction.editReply({
+        components: [errorContainer('You have reached the maximum number of accounts.')],
+        flags: [MessageFlags.IsComponentsV2],
+      });
+      return;
+    }
+
     // Add the account to the database
     await Accounts.create(interaction.user.id, {
       nickname: selectedBinding.defaultRole.nickname,
