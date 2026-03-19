@@ -1,6 +1,6 @@
-import { and, eq } from 'drizzle-orm';
+import { and, asc, desc, eq } from 'drizzle-orm';
 import { db } from './index.js';
-import { accounts } from './schema.js';
+import { accounts, users } from './schema.js';
 
 export class Accounts {
   /**
@@ -24,6 +24,15 @@ export class Accounts {
     });
   }
   /**
+   * Get the primary account by dcid
+   * @param {string} dcid - The Discord ID
+   */
+  static async getPrimaryByDcid(dcid) {
+    return await db.query.accounts.findFirst({
+      where: and(eq(accounts.dcid, dcid), eq(accounts.isPrimary, true)),
+    });
+  }
+  /**
    * Update an account
    * @param {string} dcid - The Discord ID
    * @param {string} aid - The account ID
@@ -40,10 +49,33 @@ export class Accounts {
    * @param {keyof typeof accounts.$inferSelect} key - The key to match
    * @param {any} value - The value to match
    */
-  static async getMatchingAccount(key, value) {
+  static async getDcidOfMatchingAccount(key, value) {
     return await db.query.accounts.findMany({
+      columns: {
+        dcid: true,
+      },
       where: eq(accounts[key], value),
     });
+  }
+  /**
+   * Get accounts with enableSignin, grouped by user.
+   */
+  static async getSigninByUser() {
+    const rows = await db
+      .select({
+        account: accounts,
+        user: users,
+      })
+      .from(accounts)
+      .innerJoin(users, eq(accounts.dcid, users.dcid))
+      .where(eq(accounts.enableSignin, true))
+      .orderBy(desc(accounts.isPrimary), asc(accounts.addedOn));
+
+    const byUser = Map.groupBy(rows, (row) => row.user.dcid);
+    return [...byUser.values()].map((group) => ({
+      ...group[0].user,
+      accounts: group.map((r) => r.account),
+    }));
   }
   /**
    * Check if an account exists by HG ID, role ID and server ID
