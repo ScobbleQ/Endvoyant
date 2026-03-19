@@ -1,12 +1,4 @@
-import {
-  ContainerBuilder,
-  LabelBuilder,
-  MessageFlags,
-  ModalBuilder,
-  SlashCommandBuilder,
-  TextInputBuilder,
-  TextInputStyle,
-} from 'discord.js';
+import { ContainerBuilder, MessageFlags, SlashCommandBuilder } from 'discord.js';
 import {
   textContainer,
   errorContainer,
@@ -14,7 +6,9 @@ import {
   onboardingContainer,
   addAccountContainer,
   alreadyLinkedContainer,
-} from '#/components/containers/index.js';
+  loginModal,
+  cookieModal,
+} from '#/components/index.js';
 import { Accounts, Events, Users } from '#/db/queries.js';
 import {
   generateCredByCode,
@@ -88,52 +82,9 @@ export default {
         flags: [MessageFlags.IsComponentsV2],
       });
     } else if (customId === 'login') {
-      const loginModal = new ModalBuilder()
-        .setCustomId('add-login')
-        .setTitle('Link your SKPort account');
-
-      const emailInput = new TextInputBuilder()
-        .setCustomId('email')
-        .setStyle(TextInputStyle.Short)
-        .setPlaceholder('placeholder text')
-        .setRequired(true);
-
-      const emailLabel = new LabelBuilder()
-        .setLabel('Email')
-        .setDescription('Enter your email address')
-        .setTextInputComponent(emailInput);
-
-      const passwordInput = new TextInputBuilder()
-        .setCustomId('password')
-        .setStyle(TextInputStyle.Short)
-        .setPlaceholder('placeholder text')
-        .setRequired(true);
-
-      const passwordLabel = new LabelBuilder()
-        .setLabel('Password')
-        .setDescription('Enter your password')
-        .setTextInputComponent(passwordInput);
-
-      loginModal.addLabelComponents(emailLabel, passwordLabel);
-      await interaction.showModal(loginModal);
+      await interaction.showModal(loginModal());
     } else if (customId === 'token') {
-      const tokenModal = new ModalBuilder()
-        .setCustomId('add-token')
-        .setTitle('Link your SKPort account');
-
-      const tokenInput = new TextInputBuilder()
-        .setCustomId('token')
-        .setStyle(TextInputStyle.Paragraph)
-        .setPlaceholder('ACCOUNT_TOKEN=___; ssxmod_itna=___; ssxmod_itna2=___; ...etc')
-        .setRequired(true);
-
-      const tokenLabel = new LabelBuilder()
-        .setLabel('Cookies')
-        .setDescription('Enter your cookies')
-        .setTextInputComponent(tokenInput);
-
-      tokenModal.addLabelComponents(tokenLabel);
-      await interaction.showModal(tokenModal);
+      await interaction.showModal(cookieModal());
     } else if (customId === 'info') {
       const infoContainer = new ContainerBuilder()
         .addTextDisplayComponents((textDisplay) =>

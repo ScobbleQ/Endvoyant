@@ -7,7 +7,7 @@ import {
   StringSelectMenuBuilder,
   AttachmentBuilder,
 } from 'discord.js';
-import { errorContainer } from '#/components/containers/index.js';
+import { errorContainer } from '#/components/index.js';
 import { Events } from '#/db/queries.js';
 import { ElementType, Profession } from '#/skport/utils/constants.js';
 import { getCachedCardDetail } from '#/skport/utils/getCachedCardDetail.js';

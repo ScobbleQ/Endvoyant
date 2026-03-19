@@ -1,5 +1,5 @@
 import { MessageFlags, SlashCommandBuilder } from 'discord.js';
-import { errorContainer, warningContainer } from '#/components/containers/index.js';
+import { errorContainer, warningContainer } from '#/components/index.js';
 import { createEvent, getAccount, getUser } from '#/db/queries.js';
 import { BotConfig } from '#/config';
 

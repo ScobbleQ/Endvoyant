@@ -10,7 +10,7 @@ import {
   EmbedBuilder,
   WebhookClient,
 } from 'discord.js';
-import { textContainer } from '#/components/containers/index.js';
+import { textContainer } from '#/components/index.js';
 import { BotConfig } from '#/config';
 
 export default {

@@ -1,5 +1,5 @@
 import { ContainerBuilder, MessageFlags, SlashCommandBuilder } from 'discord.js';
-import { errorContainer } from '#/components/containers/index.js';
+import { errorContainer } from '#/components/index.js';
 import { Accounts, Users, Events } from '#/db/queries.js';
 import { attendance, generateCredByCode, grantOAuth } from '#/skport/api/index.js';
 import { BotConfig } from '#/config';

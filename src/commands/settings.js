@@ -5,7 +5,7 @@ import {
   ButtonBuilder,
   ButtonStyle,
 } from 'discord.js';
-import { errorContainer } from '#/components/containers/index.js';
+import { errorContainer } from '#/components/index.js';
 import { createEvent, getAccount, getUser } from '#/db/queries.js';
 import { BotConfig } from '#/config';
 import logger from '#/logger';
