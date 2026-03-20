@@ -91,7 +91,8 @@ export async function attendance({ cred, token, uid, serverId }) {
 
     if (!res.ok) {
       const msg = await res.text();
-      return { status: -1, msg, timestamp: Math.floor(Date.now() / 1000).toString() };
+      const err = JSON.parse(msg);
+      return { status: -1, msg: err.message, timestamp: err.timestamp };
     }
 
     const data = await res.json();
