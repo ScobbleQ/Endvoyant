@@ -100,12 +100,11 @@ export default {
 
           hasContent = true;
 
-          if (!signin || signin.status !== 0) {
-            const err = signin ? JSON.parse(signin.msg) : { status: -1, msg: 'Failed to sign in' };
+          if (signin.status !== 0) {
             c.addSeparatorComponents((separator) => separator);
             c.addTextDisplayComponents((textDisplay) =>
               textDisplay.setContent(
-                `${headingString}\n${codeBlock('json', JSON.stringify(err, null, 2))}`
+                `${headingString}\n${codeBlock('json', JSON.stringify(signin, null, 2))}`
               )
             );
             return;

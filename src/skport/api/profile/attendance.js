@@ -25,7 +25,7 @@ import { computeSign } from '#/skport/utils/computeSign.js';
 /**
  * Submit attendance to the API
  * @param {{cred: string, token: string, uid: string, serverId: string}} param0
- * @returns {Promise<{ status: -1, msg: string, timestamp: string } | { status: 0, data: ResourceItem[] }>}
+ * @returns {Promise<{ status: -1, msg: string | { code: number, message: string }, timestamp: string } | { status: 0, data: ResourceItem[] }>}
  * @example
  * // Login with email and password
  * const login = await tokenByEmailPassword('test@example.com', 'password');
@@ -92,7 +92,11 @@ export async function attendance({ cred, token, uid, serverId }) {
     if (!res.ok) {
       const msg = await res.text();
       const err = JSON.parse(msg);
-      return { status: -1, msg: err.message, timestamp: err.timestamp };
+      return {
+        status: -1,
+        msg: { code: err.code, message: err.message },
+        timestamp: err.timestamp,
+      };
     }
 
     const data = await res.json();

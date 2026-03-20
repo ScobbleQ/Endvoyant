@@ -33,10 +33,10 @@ export async function checkAttendance(client) {
                 appCode: '6eb76d4e13aa36e6',
               });
 
-              if (!oauth || oauth.status !== 0) throw new Error(oauth?.msg || 'OAuth failed');
+              if (oauth.status !== 0) throw new Error(oauth.msg || 'OAuth failed');
 
               const cred = await generateCredByCode({ code: oauth.data.code });
-              if (!cred || cred.status !== 0) throw new Error(cred?.msg || 'Credential failed');
+              if (cred.status !== 0) throw new Error(cred.msg || 'Credential failed');
 
               const signin = await attendance({
                 cred: cred.data.cred,
@@ -47,15 +47,11 @@ export async function checkAttendance(client) {
 
               const headingString = `### ${a.nickname} (${privacy(a.roleId, a.isPrivate)})`;
 
-              if (!signin || signin.status !== 0) {
-                const err = signin
-                  ? JSON.parse(signin.msg)
-                  : { status: -1, msg: 'Failed to sign in' };
-
+              if (signin.status !== 0) {
                 container.addSeparatorComponents((separator) => separator);
                 container.addTextDisplayComponents((textDisplay) =>
                   textDisplay.setContent(
-                    `${headingString}\n${codeBlock('json', JSON.stringify(err, null, 2))}`
+                    `${headingString}\n${codeBlock('json', JSON.stringify(signin, null, 2))}}`
                   )
                 );
                 return;
