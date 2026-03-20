@@ -8,6 +8,12 @@ import {
 import { errorContainer, textContainer } from '#/components/index.js';
 import { Events, Accounts, Users } from '#/db/queries.js';
 import { getCachedCardDetail } from '#/skport/utils/getCachedCardDetail.js';
+import {
+  getMissingLinkedAccountMessage,
+  parseApiError,
+  resolvePrimaryAccount,
+  respondWithAccountAutocomplete,
+} from '#/utils/commandHelpers.js';
 import { ProfessionEmojis, ProfileEmojis, PropertyEmojis, RarityEmoji } from '#/utils/emojis.js';
 import { privacy } from '#/utils/privacy.js';
 import { BotConfig } from '#/config';
@@ -32,24 +38,7 @@ export default {
   async autocomplete(interaction) {
     const focusedOptions = interaction.options.getFocused(true);
     const userId = interaction.options.get('user')?.value || interaction.user.id;
-    if (!userId || typeof userId !== 'string') {
-      await interaction.respond([{ name: 'No user found', value: '-999' }]);
-      return;
-    }
-
-    const accounts = await Accounts.getByDcid(userId);
-    if (!accounts || accounts.length === 0) {
-      await interaction.respond([{ name: 'No accounts found', value: '-999' }]);
-      return;
-    }
-
-    const filtered = accounts
-      .filter((a) => a.nickname.toLowerCase().includes(focusedOptions.value.toLowerCase()))
-      .slice(0, 25);
-
-    await interaction.respond(
-      filtered.map((a) => ({ name: `${a.nickname} (${a.roleId})`, value: a.id }))
-    );
+    await respondWithAccountAutocomplete(interaction, { userId, query: focusedOptions.value });
   },
   /** @param {import("discord.js").ChatInputCommandInteraction} interaction */
   async execute(interaction) {
@@ -61,30 +50,19 @@ export default {
 
     if (!accounts?.length) {
       await interaction.reply({
-        components: [
-          errorContainer(
-            targetUser
-              ? 'That user has no linked accounts.'
-              : 'Please add an account with `/add account` to continue.'
-          ),
-        ],
+        components: [errorContainer(getMissingLinkedAccountMessage(targetUser))],
         flags: [MessageFlags.Ephemeral, MessageFlags.IsComponentsV2],
       });
       return;
     }
 
-    let account;
-    if (targetAccount) {
-      account = accounts.find((a) => a.id === targetAccount);
-      if (!account) {
-        await interaction.reply({
-          components: [errorContainer('Account not found.')],
-          flags: [MessageFlags.Ephemeral, MessageFlags.IsComponentsV2],
-        });
-        return;
-      }
-    } else {
-      account = accounts.find((a) => a.isPrimary) || accounts[0];
+    const account = resolvePrimaryAccount(accounts, targetAccount);
+    if (!account) {
+      await interaction.reply({
+        components: [errorContainer('Account not found.')],
+        flags: [MessageFlags.Ephemeral, MessageFlags.IsComponentsV2],
+      });
+      return;
     }
 
     if (account && account.isPrivate) {
@@ -119,8 +97,7 @@ export default {
 
     const profile = await getCachedCardDetail(dcid, account.id);
     if (!profile || profile.status !== 0) {
-      const code = JSON.parse(profile.msg).code || profile.status || -1;
-      const msg = JSON.parse(profile.msg).message || profile.msg || 'Unknown error';
+      const { code, msg } = parseApiError(profile);
       await interaction.editReply({
         components: [errorContainer(`[${code}] ${msg}`)],
         flags: [MessageFlags.IsComponentsV2],

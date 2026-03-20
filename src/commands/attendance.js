@@ -3,6 +3,7 @@ import pLimit from 'p-limit';
 import { errorContainer } from '#/components/index.js';
 import { Accounts, Users, Events } from '#/db/queries.js';
 import { attendance, generateCredByCode, grantOAuth } from '#/skport/api/index.js';
+import { MISSING_ACCOUNT_MESSAGE, respondWithAccountAutocomplete } from '#/utils/commandHelpers.js';
 import { privacy } from '#/utils/index.js';
 import logger from '#/utils/logger.js';
 import { BotConfig } from '#/config';
@@ -23,19 +24,7 @@ export default {
   /** @param {import("discord.js").AutocompleteInteraction} interaction */
   async autocomplete(interaction) {
     const focusedOptions = interaction.options.getFocused(true);
-    const accounts = await Accounts.getByDcid(interaction.user.id);
-    if (!accounts || accounts.length === 0) {
-      await interaction.respond([{ name: 'No accounts found', value: '-999' }]);
-      return;
-    }
-
-    const filtered = accounts
-      .filter((a) => a.nickname.toLowerCase().includes(focusedOptions.value.toLowerCase()))
-      .slice(0, 25);
-
-    await interaction.respond(
-      filtered.map((a) => ({ name: `${a.nickname} (${a.roleId})`, value: a.id }))
-    );
+    await respondWithAccountAutocomplete(interaction, { query: focusedOptions.value });
   },
   /** @param {import("discord.js").ChatInputCommandInteraction} interaction */
   async execute(interaction) {
@@ -44,7 +33,7 @@ export default {
     const user = await Users.getByDcid(interaction.user.id);
     if (!user) {
       await interaction.reply({
-        components: [errorContainer('Please add an account with `/add account` to continue.')],
+        components: [errorContainer(MISSING_ACCOUNT_MESSAGE)],
         flags: [MessageFlags.Ephemeral, MessageFlags.IsComponentsV2],
       });
       return;
@@ -65,7 +54,7 @@ export default {
     const accountList = await Accounts.getByDcid(user.dcid);
     if (!accountList || accountList.length === 0) {
       await interaction.editReply({
-        components: [errorContainer('Please add an account with `/add account` to continue.')],
+        components: [errorContainer(MISSING_ACCOUNT_MESSAGE)],
         flags: [MessageFlags.IsComponentsV2],
       });
       return;

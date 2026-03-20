@@ -11,6 +11,11 @@ import { errorContainer } from '#/components/index.js';
 import { Accounts, Events } from '#/db/queries.js';
 import { ElementType, Profession } from '#/skport/utils/constants.js';
 import { getCachedCardDetail } from '#/skport/utils/getCachedCardDetail.js';
+import {
+  MISSING_ACCOUNT_MESSAGE,
+  parseApiError,
+  respondWithAccountAutocomplete,
+} from '#/utils/commandHelpers.js';
 import { ProfessionEmojis, PropertyEmojis, RarityEmoji, Rarity2Emoji } from '#/utils/emojis.js';
 import { getMaxLevel, getBreakthroughLevel } from '#/utils/game.js';
 import { generateCharacterBuild } from '#/utils/generateCharacterBuild.js';
@@ -97,20 +102,6 @@ const resolveAccount = (accounts, /** @type {string | null} */ targetShortId) =>
   targetShortId
     ? accounts.find((a) => String(a.shortId) === targetShortId)
     : (accounts.find((a) => a.isPrimary) ?? accounts[0]);
-
-/** @param {{ msg?: string, status?: number } | null} result */
-const parseErrorMsg = (result) => {
-  let code = -1;
-  let msg = result?.msg ?? 'Unknown error';
-  try {
-    const parsed = JSON.parse(result?.msg ?? '{}');
-    code = parsed.code ?? result?.status ?? -1;
-    msg = parsed.message ?? msg;
-  } catch {
-    /* plain string */
-  }
-  return { code, msg };
-};
 
 /** @param {string} stateStr */
 const parseState = (stateStr) => {
@@ -487,19 +478,10 @@ export default {
     const focusedOption = interaction.options.getFocused(true);
 
     if (focusedOption.name === 'account') {
-      const accounts = await Accounts.getByDcid(interaction.user.id);
-      if (!accounts || accounts.length === 0) {
-        await interaction.respond([{ name: 'No accounts found', value: '-999' }]);
-        return;
-      }
-
-      const filtered = accounts
-        .filter((a) => a.nickname.toLowerCase().includes(focusedOption.value.toLowerCase()))
-        .slice(0, 25);
-
-      await interaction.respond(
-        filtered.map((a) => ({ name: `${a.nickname} (${a.roleId})`, value: String(a.shortId) }))
-      );
+      await respondWithAccountAutocomplete(interaction, {
+        query: focusedOption.value,
+        valueKey: 'shortId',
+      });
       return;
     }
 
@@ -518,7 +500,7 @@ export default {
 
       const characters = await getCharacters(interaction.user.id, account.id);
       if (!characters || characters.status !== 0) {
-        const { code, msg } = parseErrorMsg(characters);
+        const { code, msg } = parseApiError(characters);
         await interaction.respond([{ name: `[${code}] ${msg}`, value: '-999' }]);
         return;
       }
@@ -541,7 +523,7 @@ export default {
     const accounts = await Accounts.getByDcid(interaction.user.id);
     if (!accounts?.length) {
       await interaction.editReply({
-        components: [errorContainer('Please add an account with `/add account` to continue.')],
+        components: [errorContainer(MISSING_ACCOUNT_MESSAGE)],
         flags: [MessageFlags.IsComponentsV2],
       });
       return;
@@ -559,7 +541,7 @@ export default {
 
     const characters = await getCharacters(interaction.user.id, account.id);
     if (!characters || characters.status !== 0) {
-      const { code, msg } = parseErrorMsg(characters);
+      const { code, msg } = parseApiError(characters);
       await interaction.editReply({
         components: [errorContainer(`[${code}] ${msg}`)],
         flags: [MessageFlags.IsComponentsV2],

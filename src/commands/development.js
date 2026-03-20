@@ -7,6 +7,12 @@ import {
 import { errorContainer, textContainer } from '#/components/index.js';
 import { Events, Accounts, Users } from '#/db/queries.js';
 import { getCachedCardDetail } from '#/skport/utils/getCachedCardDetail.js';
+import {
+  MISSING_ACCOUNT_MESSAGE,
+  getMissingLinkedAccountMessage,
+  parseApiError,
+  respondWithAccountAutocomplete,
+} from '#/utils/commandHelpers.js';
 import { BotConfig } from '#/config';
 
 /** @param {Array<{ id: string; shortId?: number; isPrimary?: boolean; isPrivate?: boolean }>} accounts @param {number} [shortId] */
@@ -14,19 +20,6 @@ const resolveAccount = (accounts, shortId) =>
   shortId
     ? accounts.find((a) => a.shortId === shortId)
     : (accounts.find((a) => a.isPrimary) ?? accounts[0]);
-
-/** @param {{ status?: number; msg?: string } | null} profile */
-const parseProfileError = (profile) => {
-  try {
-    const parsed = JSON.parse(profile?.msg ?? '{}');
-    return {
-      code: parsed.code ?? profile?.status ?? -1,
-      msg: parsed.message ?? profile?.msg ?? 'Unknown error',
-    };
-  } catch {
-    return { code: profile?.status ?? -1, msg: profile?.msg ?? 'Unknown error' };
-  }
-};
 
 /** @param {string} dcid @param {string} viewerId @param {{ shortId?: number }} account */
 const containerContext = (dcid, viewerId, account) => ({
@@ -129,24 +122,7 @@ export default {
   async autocomplete(interaction) {
     const focusedOptions = interaction.options.getFocused(true);
     const userId = interaction.options.get('user')?.value || interaction.user.id;
-    if (!userId || typeof userId !== 'string') {
-      await interaction.respond([{ name: 'No user found', value: '-999' }]);
-      return;
-    }
-
-    const accounts = await Accounts.getByDcid(userId);
-    if (!accounts || accounts.length === 0) {
-      await interaction.respond([{ name: 'No accounts found', value: '-999' }]);
-      return;
-    }
-
-    const filtered = accounts
-      .filter((a) => a.nickname.toLowerCase().includes(focusedOptions.value.toLowerCase()))
-      .slice(0, 25);
-
-    await interaction.respond(
-      filtered.map((a) => ({ name: `${a.nickname} (${a.roleId})`, value: a.id }))
-    );
+    await respondWithAccountAutocomplete(interaction, { userId, query: focusedOptions.value });
   },
   /** @param {import("discord.js").ChatInputCommandInteraction} interaction */
   async execute(interaction) {
@@ -158,13 +134,7 @@ export default {
 
     if (!accounts?.length) {
       await interaction.reply({
-        components: [
-          errorContainer(
-            targetUser
-              ? 'That user has no linked accounts.'
-              : 'Please add an account with `/add account` to continue.'
-          ),
-        ],
+        components: [errorContainer(getMissingLinkedAccountMessage(targetUser))],
         flags: [MessageFlags.Ephemeral, MessageFlags.IsComponentsV2],
       });
       return;
@@ -191,7 +161,7 @@ export default {
     const user = await Users.getByDcid(dcid);
     if (!user) {
       await interaction.reply({
-        components: [errorContainer('Please add an account with `/add account` to continue.')],
+        components: [errorContainer(MISSING_ACCOUNT_MESSAGE)],
         flags: [MessageFlags.Ephemeral, MessageFlags.IsComponentsV2],
       });
       return;
@@ -212,7 +182,7 @@ export default {
 
     const profile = await getCachedCardDetail(dcid, account.id);
     if (!profile || profile.status !== 0) {
-      const { code, msg } = parseProfileError(profile);
+      const { code, msg } = parseApiError(profile);
       await interaction.editReply({
         components: [errorContainer(`[${code}] ${msg}`)],
         flags: [MessageFlags.IsComponentsV2],
@@ -257,7 +227,7 @@ export default {
 
     const profile = await getCachedCardDetail(dcid, account.id);
     if (!profile || profile.status !== 0) {
-      const { code, msg } = parseProfileError(profile);
+      const { code, msg } = parseApiError(profile);
       await interaction.editReply({
         components: [errorContainer(`[${code}] ${msg}`)],
         flags: [MessageFlags.IsComponentsV2],
