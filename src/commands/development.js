@@ -37,8 +37,7 @@ const containerContext = (dcid, viewerId, account) => ({
 /**
  * @param {import('../skport/api/profile/cardDetail.js').CardDetail['domain']} domains
  * @param {number} domainIndex
- * @param {{ shortId?: number; dcid?: string }}
- * @returns {ContainerBuilder}
+ * @param {{ shortId?: number; dcid?: string }} context
  */
 const buildDevelopmentContainer = (domains, domainIndex, { shortId = 0, dcid } = {}) => {
   const reversedDomains = (domains ?? []).toReversed();

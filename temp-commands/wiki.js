@@ -5,7 +5,6 @@ import { getOperators } from '../src/skport/api/wiki/operators.js';
 import { getWeapons } from '../src/skport/api/wiki/weapons.js';
 import { getOrCreateCache, getOrSet } from '../src/skport/utils/cache.js';
 import { resolveSubType } from '../src/skport/utils/resolveSubType.js';
-import { maintenanceContainer } from '../src/utils/containers.js';
 
 /** @typedef {import('../src/skport/utils/typedef.js').WikiApiResponse} WikiApiResponse */
 

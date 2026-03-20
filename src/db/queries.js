@@ -3,9 +3,9 @@ export * from './accounts.js';
 export * from './events.js';
 export * from './efAttemptedCodes.js';
 
-import { and, desc, eq } from 'drizzle-orm';
+import { and, eq } from 'drizzle-orm';
 import { db } from './index.js';
-import { accounts, events, users } from './schema.js';
+import { accounts, users } from './schema.js';
 
 /**
  * Get a user from the database

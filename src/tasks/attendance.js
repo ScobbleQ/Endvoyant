@@ -1,4 +1,4 @@
-import { ContainerBuilder, DiscordAPIError, MessageFlags, codeBlock } from 'discord.js';
+import { ContainerBuilder, DiscordAPIError, MessageFlags } from 'discord.js';
 import pLimit from 'p-limit';
 import { Users, Accounts, Events } from '#/db/queries.js';
 import { attendance, generateCredByCode, grantOAuth } from '#/skport/api/index.js';

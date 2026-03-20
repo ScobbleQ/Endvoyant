@@ -1,4 +1,4 @@
-import { ContainerBuilder, MessageFlags, SlashCommandBuilder, codeBlock } from 'discord.js';
+import { ContainerBuilder, MessageFlags, SlashCommandBuilder } from 'discord.js';
 import pLimit from 'p-limit';
 import { errorContainer } from '#/components/index.js';
 import { Accounts, Users, Events } from '#/db/queries.js';
