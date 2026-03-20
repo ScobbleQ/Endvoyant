@@ -2,7 +2,6 @@
  *
  * @param {string} uid
  * @param {boolean} flag
- * @returns {string}
  */
 export function privacy(uid, flag) {
   if (!flag) return uid;

@@ -1,6 +1,5 @@
 /**
  * @param {number} evolvePhase
- * @returns {number}
  */
 export function getMaxLevel(evolvePhase) {
   switch (evolvePhase) {
@@ -20,7 +19,6 @@ export function getMaxLevel(evolvePhase) {
 /**
  *
  * @param {number} breakthroughLevel
- * @returns {number}
  */
 export function getBreakthroughLevel(breakthroughLevel) {
   switch (breakthroughLevel) {

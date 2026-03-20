@@ -1,7 +1,10 @@
 {
   "compilerOptions": {
     "checkJs": true,
+    "skipLibCheck": true,
     "allowJs": true,
+    "strict": true,
+    "noEmit": true,
     "baseUrl": ".",
     "paths": {
       "#/*": ["src/*"],
@@ -10,8 +13,8 @@
     },
     "module": "NodeNext",
     "moduleResolution": "NodeNext",
-    "target": "esnext",
-    "strict": true
+    "target": "esnext"
   },
-  "include": ["src"]
+  "include": ["src"],
+  "exclude": ["node_modules"]
 }

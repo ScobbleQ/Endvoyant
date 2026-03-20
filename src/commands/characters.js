@@ -51,7 +51,6 @@ const getElementName = (c) => c.charData.property.value;
  * Also strips <@tips.xxx>...</> to plain text.
  * @param {string} text
  * @param {Record<string, string>} params
- * @returns {string}
  */
 const substituteTacticalParams = (text, params) => {
   if (!text || typeof text !== 'string') return '';
@@ -129,7 +128,6 @@ const parseState = (stateStr) => {
 /**
  * @param {Characters} char
  * @param {string} profession
- * @returns {boolean}
  */
 const matchesProfession = (char, profession) => {
   if (profession === 'all') return true;
@@ -142,7 +140,6 @@ const matchesProfession = (char, profession) => {
 /**
  * @param {Characters} char
  * @param {string} element
- * @returns {boolean}
  */
 const matchesElement = (char, element) => {
   if (element === 'all') return true;
@@ -157,7 +154,6 @@ const matchesElement = (char, element) => {
 /**
  * @param {Characters} char
  * @param {string} rarity
- * @returns {boolean}
  */
 const matchesRarity = (char, rarity) => {
   if (rarity === 'all') return true;
@@ -170,7 +166,6 @@ const matchesRarity = (char, rarity) => {
 /**
  * @param {Characters[]} chars
  * @param {{ page: number, profession: string, element: string, rarity: string, shortId?: number }} state
- * @returns {ContainerBuilder}
  */
 const buildCatalogContainer = (chars, { page, profession, element, rarity, shortId }) => {
   const sid = shortId ?? 0;
@@ -337,7 +332,6 @@ const buildCatalogContainer = (chars, { page, profession, element, rarity, short
 /**
  * @param {Characters} character
  * @param {string} [catalogStateStr] - Optional state (page:profession:element) to restore when going back
- * @returns {ContainerBuilder}
  */
 const buildCharacterContainer = (character, catalogStateStr) => {
   const { charData, level, evolvePhase, potentialLevel, ownTs, weapon } = character;

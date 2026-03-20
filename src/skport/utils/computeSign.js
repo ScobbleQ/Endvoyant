@@ -5,7 +5,6 @@ import crypto from 'crypto';
  *
  * Formula: sign = MD5(HMAC-SHA256(path + body + timestamp + headers_json, signToken))
  * @param {{ token: string, path: string, body: string, timestamp: string }} param0
- * @returns {string}
  * @example
  * // Login with email and password
  * const login = await tokenByEmailPassword('test@example.com', 'password');
