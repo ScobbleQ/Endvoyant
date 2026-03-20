@@ -4,6 +4,391 @@
   "version": "7",
   "dialect": "postgresql",
   "tables": {
+    "public.accounts": {
+      "name": "accounts",
+      "schema": "",
+      "columns": {
+        "id": {
+          "name": "id",
+          "type": "uuid",
+          "primaryKey": true,
+          "notNull": true,
+          "default": "gen_random_uuid()"
+        },
+        "dcid": {
+          "name": "dcid",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "added_on": {
+          "name": "added_on",
+          "type": "timestamp with time zone",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "now()"
+        },
+        "nickname": {
+          "name": "nickname",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "account_token": {
+          "name": "account_token",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "hg_id": {
+          "name": "hg_id",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "user_id": {
+          "name": "user_id",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "role_id": {
+          "name": "role_id",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "channel_id": {
+          "name": "channel_id",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "server_type": {
+          "name": "server_type",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "server_id": {
+          "name": "server_id",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "server_name": {
+          "name": "server_name",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "is_private": {
+          "name": "is_private",
+          "type": "boolean",
+          "primaryKey": false,
+          "notNull": true,
+          "default": false
+        },
+        "enable_notif": {
+          "name": "enable_notif",
+          "type": "boolean",
+          "primaryKey": false,
+          "notNull": true,
+          "default": true
+        },
+        "enable_signin": {
+          "name": "enable_signin",
+          "type": "boolean",
+          "primaryKey": false,
+          "notNull": true,
+          "default": true
+        },
+        "enable_redeem": {
+          "name": "enable_redeem",
+          "type": "boolean",
+          "primaryKey": false,
+          "notNull": true,
+          "default": true
+        },
+        "is_primary": {
+          "name": "is_primary",
+          "type": "boolean",
+          "primaryKey": false,
+          "notNull": true,
+          "default": false
+        },
+        "short_id": {
+          "name": "short_id",
+          "type": "smallint",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "'1'"
+        }
+      },
+      "indexes": {
+        "accounts_one_primary_per_user": {
+          "name": "accounts_one_primary_per_user",
+          "columns": [
+            {
+              "expression": "dcid",
+              "asc": true,
+              "nulls": "last",
+              "opclass": "text_ops",
+              "isExpression": false
+            }
+          ],
+          "isUnique": true,
+          "concurrently": false,
+          "method": "btree",
+          "where": "is_primary",
+          "with": {}
+        }
+      },
+      "foreignKeys": {
+        "accounts_dcid_fkey": {
+          "name": "accounts_dcid_fkey",
+          "tableFrom": "accounts",
+          "tableTo": "users",
+          "schemaTo": "public",
+          "columnsFrom": ["dcid"],
+          "columnsTo": ["dcid"],
+          "onDelete": "cascade",
+          "onUpdate": "cascade"
+        }
+      },
+      "compositePrimaryKeys": {},
+      "uniqueConstraints": {
+        "accounts_dcid_short_id_key": {
+          "columns": ["dcid", "short_id"],
+          "nullsNotDistinct": false,
+          "name": "accounts_dcid_short_id_key"
+        }
+      },
+      "checkConstraints": {},
+      "policies": {},
+      "isRLSEnabled": true
+    },
+    "public.ef_codes": {
+      "name": "ef_codes",
+      "schema": "",
+      "columns": {
+        "id": {
+          "name": "id",
+          "type": "bigint",
+          "primaryKey": true,
+          "notNull": true,
+          "identity": {
+            "type": "byDefault",
+            "name": "ef_codes_id_seq",
+            "increment": "1",
+            "minValue": "1",
+            "maxValue": "9223372036854775807",
+            "startWith": "1",
+            "cache": "1",
+            "cycle": false,
+            "schema": "public"
+          }
+        },
+        "code": {
+          "name": "code",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "rewards": {
+          "name": "rewards",
+          "type": "text[]",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "notes": {
+          "name": "notes",
+          "type": "text[]",
+          "primaryKey": false,
+          "notNull": false
+        }
+      },
+      "indexes": {},
+      "foreignKeys": {},
+      "compositePrimaryKeys": {},
+      "uniqueConstraints": {
+        "ef_codes_code_key": {
+          "columns": ["code"],
+          "nullsNotDistinct": false,
+          "name": "ef_codes_code_key"
+        }
+      },
+      "checkConstraints": {},
+      "policies": {},
+      "isRLSEnabled": true
+    },
+    "public.ef_attempted_codes": {
+      "name": "ef_attempted_codes",
+      "schema": "",
+      "columns": {
+        "id": {
+          "name": "id",
+          "type": "bigint",
+          "primaryKey": true,
+          "notNull": true,
+          "identity": {
+            "type": "byDefault",
+            "name": "ef_attempted_codes_id_seq",
+            "increment": "1",
+            "minValue": "1",
+            "maxValue": "9223372036854775807",
+            "startWith": "1",
+            "cache": "1",
+            "cycle": false,
+            "schema": "public"
+          }
+        },
+        "aid": {
+          "name": "aid",
+          "type": "uuid",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "code": {
+          "name": "code",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "attempted_at": {
+          "name": "attempted_at",
+          "type": "timestamp with time zone",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "now()"
+        },
+        "status": {
+          "name": "status",
+          "type": "smallint",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "last_attempted_at": {
+          "name": "last_attempted_at",
+          "type": "timestamp with time zone",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "now()"
+        }
+      },
+      "indexes": {},
+      "foreignKeys": {
+        "ef_attempted_codes_aid_fkey": {
+          "name": "ef_attempted_codes_aid_fkey",
+          "tableFrom": "ef_attempted_codes",
+          "tableTo": "accounts",
+          "schemaTo": "public",
+          "columnsFrom": ["aid"],
+          "columnsTo": ["id"],
+          "onDelete": "cascade",
+          "onUpdate": "cascade"
+        }
+      },
+      "compositePrimaryKeys": {},
+      "uniqueConstraints": {
+        "ef_attempted_codes_aid_code_key": {
+          "columns": ["aid", "code"],
+          "nullsNotDistinct": false,
+          "name": "ef_attempted_codes_aid_code_key"
+        }
+      },
+      "checkConstraints": {},
+      "policies": {},
+      "isRLSEnabled": true
+    },
+    "public.events": {
+      "name": "events",
+      "schema": "",
+      "columns": {
+        "id": {
+          "name": "id",
+          "type": "bigint",
+          "primaryKey": true,
+          "notNull": true,
+          "identity": {
+            "type": "byDefault",
+            "name": "event_id_seq",
+            "increment": "1",
+            "minValue": "1",
+            "maxValue": "9223372036854775807",
+            "startWith": "1",
+            "cache": "1",
+            "cycle": false,
+            "schema": "public"
+          }
+        },
+        "dcid": {
+          "name": "dcid",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "created_at": {
+          "name": "created_at",
+          "type": "timestamp with time zone",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "now()"
+        },
+        "source": {
+          "name": "source",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "action": {
+          "name": "action",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "metadata": {
+          "name": "metadata",
+          "type": "jsonb",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "aid": {
+          "name": "aid",
+          "type": "uuid",
+          "primaryKey": false,
+          "notNull": false
+        }
+      },
+      "indexes": {},
+      "foreignKeys": {
+        "event_dcid_fkey": {
+          "name": "event_dcid_fkey",
+          "tableFrom": "events",
+          "tableTo": "users",
+          "schemaTo": "public",
+          "columnsFrom": ["dcid"],
+          "columnsTo": ["dcid"],
+          "onDelete": "cascade",
+          "onUpdate": "cascade"
+        },
+        "events_aid_fkey": {
+          "name": "events_aid_fkey",
+          "tableFrom": "events",
+          "tableTo": "accounts",
+          "schemaTo": "public",
+          "columnsFrom": ["aid"],
+          "columnsTo": ["id"],
+          "onDelete": "cascade",
+          "onUpdate": "cascade"
+        }
+      },
+      "compositePrimaryKeys": {},
+      "uniqueConstraints": {},
+      "checkConstraints": {},
+      "policies": {},
+      "isRLSEnabled": true
+    },
     "public.users": {
       "name": "users",
       "schema": "",
@@ -21,205 +406,23 @@
           "notNull": true,
           "default": "now()"
         },
-        "is_private": {
-          "name": "is_private",
-          "type": "boolean",
-          "primaryKey": false,
-          "notNull": true,
-          "default": false
-        },
-        "notify_attendance": {
-          "name": "notify_attendance",
-          "type": "boolean",
-          "primaryKey": false,
-          "notNull": true,
-          "default": true
-        },
-        "enable_attendance": {
-          "name": "enable_attendance",
-          "type": "boolean",
-          "primaryKey": false,
-          "notNull": true,
-          "default": true
-        },
         "is_banned": {
           "name": "is_banned",
           "type": "boolean",
           "primaryKey": false,
           "notNull": true,
           "default": false
+        },
+        "enable_notif": {
+          "name": "enable_notif",
+          "type": "boolean",
+          "primaryKey": false,
+          "notNull": true,
+          "default": true
         }
       },
       "indexes": {},
       "foreignKeys": {},
-      "compositePrimaryKeys": {},
-      "uniqueConstraints": {},
-      "checkConstraints": {},
-      "policies": {},
-      "isRLSEnabled": true
-    },
-    "public.skport": {
-      "name": "skport",
-      "schema": "",
-      "columns": {
-        "dcid": {
-          "name": "dcid",
-          "type": "text",
-          "primaryKey": true,
-          "notNull": true
-        },
-        "user_id": {
-          "name": "user_id",
-          "type": "text",
-          "primaryKey": false,
-          "notNull": true
-        },
-        "cred": {
-          "name": "cred",
-          "type": "text",
-          "primaryKey": false,
-          "notNull": true
-        },
-        "c_token": {
-          "name": "c_token",
-          "type": "text",
-          "primaryKey": false,
-          "notNull": true
-        },
-        "server_id": {
-          "name": "server_id",
-          "type": "text",
-          "primaryKey": false,
-          "notNull": true
-        },
-        "role_id": {
-          "name": "role_id",
-          "type": "text",
-          "primaryKey": false,
-          "notNull": true
-        },
-        "login_token": {
-          "name": "login_token",
-          "type": "text",
-          "primaryKey": false,
-          "notNull": true
-        },
-        "hg_id": {
-          "name": "hg_id",
-          "type": "text",
-          "primaryKey": false,
-          "notNull": true
-        },
-        "oauth_code": {
-          "name": "oauth_code",
-          "type": "text",
-          "primaryKey": false,
-          "notNull": true
-        },
-        "email": {
-          "name": "email",
-          "type": "text",
-          "primaryKey": false,
-          "notNull": true
-        },
-        "oath_uid": {
-          "name": "oath_uid",
-          "type": "text",
-          "primaryKey": false,
-          "notNull": true
-        },
-        "server_name": {
-          "name": "server_name",
-          "type": "text",
-          "primaryKey": false,
-          "notNull": true
-        }
-      },
-      "indexes": {},
-      "foreignKeys": {
-        "cred_dcid_fkey": {
-          "name": "cred_dcid_fkey",
-          "tableFrom": "skport",
-          "tableTo": "users",
-          "schemaTo": "public",
-          "columnsFrom": ["dcid"],
-          "columnsTo": ["dcid"],
-          "onDelete": "cascade",
-          "onUpdate": "cascade"
-        }
-      },
-      "compositePrimaryKeys": {},
-      "uniqueConstraints": {
-        "cred_dcid_key": {
-          "columns": ["dcid"],
-          "nullsNotDistinct": false,
-          "name": "cred_dcid_key"
-        }
-      },
-      "checkConstraints": {},
-      "policies": {},
-      "isRLSEnabled": true
-    },
-    "public.events": {
-      "name": "events",
-      "schema": "",
-      "columns": {
-        "dcid": {
-          "name": "dcid",
-          "type": "text",
-          "primaryKey": false,
-          "notNull": true
-        },
-        "created_at": {
-          "name": "created_at",
-          "type": "timestamp with time zone",
-          "primaryKey": false,
-          "notNull": true,
-          "default": "now()"
-        },
-        "interaction": {
-          "name": "interaction",
-          "type": "text",
-          "primaryKey": false,
-          "notNull": true
-        },
-        "metadata": {
-          "name": "metadata",
-          "type": "jsonb",
-          "primaryKey": false,
-          "notNull": false
-        },
-        "id": {
-          "name": "id",
-          "type": "bigint",
-          "primaryKey": true,
-          "notNull": true,
-          "identity": {
-            "type": "byDefault",
-            "name": "events_id_seq",
-            "increment": "1",
-            "minValue": "1",
-            "maxValue": "9223372036854775807",
-            "startWith": "1",
-            "cache": "1",
-            "cycle": false,
-            "schema": "public"
-          }
-        }
-      },
-      "indexes": {},
-      "foreignKeys": {
-        "events_dcid_fkey": {
-          "name": "events_dcid_fkey",
-          "tableFrom": "events",
-          "tableTo": "users",
-          "schemaTo": "public",
-          "columnsFrom": ["dcid"],
-          "columnsTo": ["dcid"],
-          "onDelete": "cascade",
-          "onUpdate": "cascade"
-        }
-      },
       "compositePrimaryKeys": {},
       "uniqueConstraints": {},
       "checkConstraints": {},
@@ -239,6 +442,28 @@
     "columns": {}
   },
   "internal": {
-    "tables": {}
+    "tables": {
+      "accounts": {
+        "columns": {
+          "short_id": {
+            "isDefaultAnExpression": true
+          }
+        }
+      },
+      "ef_codes": {
+        "columns": {
+          "rewards": {
+            "isArray": true,
+            "dimensions": 1,
+            "rawType": "text"
+          },
+          "notes": {
+            "isArray": true,
+            "dimensions": 1,
+            "rawType": "text"
+          }
+        }
+      }
+    }
   }
 }
