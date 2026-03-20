@@ -6,7 +6,7 @@ import {
   TextDisplayBuilder,
 } from 'discord.js';
 import { errorContainer, textContainer } from '#/components/index.js';
-import { createEvent, getUser, Accounts, Users } from '#/db/queries.js';
+import { Events, Accounts, Users } from '#/db/queries.js';
 import { getCachedCardDetail } from '#/skport/utils/getCachedCardDetail.js';
 import { ProfessionEmojis, ProfileEmojis, PropertyEmojis, RarityEmoji } from '#/utils/emojis.js';
 import { privacy } from '#/utils/privacy.js';
@@ -105,7 +105,8 @@ export default {
     }
 
     if (BotConfig.environment === 'production') {
-      await createEvent(interaction.user.id, {
+      await Events.create(interaction.user.id, {
+        aid: account.id,
         source: 'slash',
         action: 'profile',
       });

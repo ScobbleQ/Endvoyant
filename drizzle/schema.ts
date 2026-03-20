@@ -124,12 +124,20 @@ export const events = pgTable(
     source: text().notNull(),
     action: text().notNull(),
     metadata: jsonb(),
+    aid: uuid(),
   },
   (table) => [
     foreignKey({
       columns: [table.dcid],
       foreignColumns: [users.dcid],
       name: 'event_dcid_fkey',
+    })
+      .onUpdate('cascade')
+      .onDelete('cascade'),
+    foreignKey({
+      columns: [table.aid],
+      foreignColumns: [accounts.id],
+      name: 'events_aid_fkey',
     })
       .onUpdate('cascade')
       .onDelete('cascade'),

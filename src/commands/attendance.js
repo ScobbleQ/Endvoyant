@@ -114,16 +114,15 @@ export default {
             .map((r) => ({ name: r.name, count: r.count, icon: r.icon }));
 
           if (eventId) {
-            await Events.update(a.dcid, eventId, {
+            await Events.update(user.dcid, eventId, {
+              aid: a.id,
               metadata: {
                 reward: {
                   name: mainReward.name,
                   count: mainReward.count,
                   icon: mainReward.icon,
                 },
-                ...(bonusRewards.length > 0 && {
-                  bonus: bonusRewards,
-                }),
+                ...(bonusRewards.length > 0 && { bonus: bonusRewards }),
               },
             });
           }
