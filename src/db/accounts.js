@@ -1,4 +1,4 @@
-import { and, asc, desc, eq } from 'drizzle-orm';
+import { and, asc, desc, eq, sql } from 'drizzle-orm';
 import { db } from './index.js';
 import { accounts, users } from './schema.js';
 
@@ -6,12 +6,17 @@ export class Accounts {
   /**
    * Create a new account
    * @param {string} dcid - The Discord ID
-   * @param {Omit<typeof accounts.$inferInsert, 'dcid'>} data
+   * @param {Omit<typeof accounts.$inferInsert, 'dcid' | 'shortId'>} data
    */
   static async create(dcid, data) {
+    const [next] = await db
+      .select({ next: sql`COALESCE(MAX(${accounts.shortId}), 0) + 1` })
+      .from(accounts)
+      .where(eq(accounts.dcid, dcid));
+    const shortId = Number(next?.next ?? 1);
     return await db
       .insert(accounts)
-      .values({ dcid, ...data })
+      .values({ dcid, shortId, ...data })
       .returning({ id: accounts.id });
   }
   /**
@@ -21,6 +26,16 @@ export class Accounts {
   static async getByDcid(dcid) {
     return await db.query.accounts.findMany({
       where: eq(accounts.dcid, dcid),
+    });
+  }
+  /**
+   * Get an account by dcid and shortId
+   * @param {string} dcid - The Discord ID
+   * @param {number} shortId - The short account ID (1, 2, 3... per user)
+   */
+  static async getByDcidAndShortId(dcid, shortId) {
+    return await db.query.accounts.findFirst({
+      where: and(eq(accounts.dcid, dcid), eq(accounts.shortId, shortId)),
     });
   }
   /**

@@ -1,4 +1,5 @@
-import { ContainerBuilder, MessageFlags, SlashCommandBuilder } from 'discord.js';
+import { ContainerBuilder, MessageFlags, SlashCommandBuilder, codeBlock } from 'discord.js';
+import pLimit from 'p-limit';
 import { errorContainer } from '#/components/index.js';
 import { Accounts, Users, Events } from '#/db/queries.js';
 import { attendance, generateCredByCode, grantOAuth } from '#/skport/api/index.js';
@@ -74,75 +75,81 @@ export default {
     let hasContent = false;
 
     const c = new ContainerBuilder().addTextDisplayComponents((textDisplay) =>
-      textDisplay.setContent(`## ▼// Sign-in Reward`)
+      textDisplay.setContent(`## ▼// Sign-in Reward\n-# <t:${Math.floor(Date.now() / 1000)}:F>`)
     );
 
-    const task = accounts.map((a) => async () => {
-      try {
-        if (!a) return;
-        const headingString = `### ${a.nickname} (${privacy(a.roleId, a.isPrivate)})`;
-        c.addSeparatorComponents((separator) => separator);
+    const limit = pLimit(5);
+    const task = accounts.map((a) =>
+      limit(async () => {
+        try {
+          if (!a) return;
+          const headingString = `### ${a.nickname} (${privacy(a.roleId, a.isPrivate)})`;
 
-        const oauth = await grantOAuth({ token: a.accountToken, appCode: '6eb76d4e13aa36e6' });
-        if (!oauth || oauth.status !== 0) throw new Error(oauth?.msg || 'OAuth failed');
+          const oauth = await grantOAuth({ token: a.accountToken, appCode: '6eb76d4e13aa36e6' });
+          if (!oauth || oauth.status !== 0) throw new Error(oauth?.msg || 'OAuth failed');
 
-        const cred = await generateCredByCode({ code: oauth.data.code });
-        if (!cred || cred.status !== 0) throw new Error(cred?.msg || 'Credential failed');
+          const cred = await generateCredByCode({ code: oauth.data.code });
+          if (!cred || cred.status !== 0) throw new Error(cred?.msg || 'Credential failed');
 
-        const signin = await attendance({
-          cred: cred.data.cred,
-          token: cred.data.token,
-          uid: a.roleId,
-          serverId: a.serverId,
-        });
-
-        if (!signin || signin.status !== 0) {
-          c.addTextDisplayComponents((textDisplay) =>
-            textDisplay.setContent(
-              `${headingString}\n${JSON.stringify(signin.msg, null, 2) || 'Failed to sign in'}`
-            )
-          );
-          return;
-        }
-
-        const mainReward = signin.data[0];
-        const bonusRewards = signin.data
-          .slice(1)
-          .map((r) => ({ name: r.name, count: r.count, icon: r.icon }));
-
-        if (eventId) {
-          await Events.update(a.dcid, eventId, {
-            metadata: {
-              reward: {
-                name: mainReward.name,
-                count: mainReward.count,
-                icon: mainReward.icon,
-              },
-              ...(bonusRewards.length > 0 && {
-                bonus: bonusRewards,
-              }),
-            },
+          const signin = await attendance({
+            cred: cred.data.cred,
+            token: cred.data.token,
+            uid: a.roleId,
+            serverId: a.serverId,
           });
+
+          hasContent = true;
+
+          if (!signin || signin.status !== 0) {
+            const err = signin ? JSON.parse(signin.msg) : { status: -1, msg: 'Failed to sign in' };
+            c.addSeparatorComponents((separator) => separator);
+            c.addTextDisplayComponents((textDisplay) =>
+              textDisplay.setContent(
+                `${headingString}\n${codeBlock('json', JSON.stringify(err, null, 2))}`
+              )
+            );
+            return;
+          }
+
+          const mainReward = signin.data[0];
+          const bonusRewards = signin.data
+            .slice(1)
+            .map((r) => ({ name: r.name, count: r.count, icon: r.icon }));
+
+          if (eventId) {
+            await Events.update(a.dcid, eventId, {
+              metadata: {
+                reward: {
+                  name: mainReward.name,
+                  count: mainReward.count,
+                  icon: mainReward.icon,
+                },
+                ...(bonusRewards.length > 0 && {
+                  bonus: bonusRewards,
+                }),
+              },
+            });
+          }
+
+          const rewardString = `${mainReward.name}\nAmount: ${mainReward.count}`;
+          const bonusString =
+            bonusRewards.length > 0
+              ? `Additional Rewards:\n${bonusRewards.map((r) => `${r.name} x${r.count}`).join('\n')}`
+              : '';
+
+          c.addSeparatorComponents((separator) => separator);
+          c.addSectionComponents((section) =>
+            section
+              .addTextDisplayComponents((textDisplay) =>
+                textDisplay.setContent(`${headingString}\n${rewardString}\n\n${bonusString}`)
+              )
+              .setThumbnailAccessory((thumbnail) => thumbnail.setURL(mainReward.icon))
+          );
+        } catch (error) {
+          logger.error(error, `[Command:Attendance] Failed to sign in for ${a?.dcid}:${a?.id}`);
         }
-
-        const rewardString = `${mainReward.name}\nAmount: ${mainReward.count}`;
-        const bonusString =
-          bonusRewards.length > 0
-            ? `Additional Rewards:\n${bonusRewards.map((r) => `${r.name} x${r.count}`).join('\n')}`
-            : '';
-
-        hasContent = true;
-        c.addSectionComponents((section) =>
-          section
-            .addTextDisplayComponents((textDisplay) =>
-              textDisplay.setContent(`${headingString}\n${rewardString}\n\n${bonusString}`)
-            )
-            .setThumbnailAccessory((thumbnail) => thumbnail.setURL(mainReward.icon))
-        );
-      } catch (error) {
-        logger.error(error, `[Command:Attendance] Failed to sign in for ${a?.dcid}:${a?.id}`);
-      }
-    });
+      })
+    );
 
     await Promise.allSettled(task);
 

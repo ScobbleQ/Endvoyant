@@ -1,4 +1,4 @@
-import { ContainerBuilder, DiscordAPIError, MessageFlags } from 'discord.js';
+import { ContainerBuilder, DiscordAPIError, MessageFlags, codeBlock } from 'discord.js';
 import pLimit from 'p-limit';
 import { Users, Accounts, Events } from '#/db/queries.js';
 import { attendance, generateCredByCode, grantOAuth } from '#/skport/api/index.js';
@@ -18,9 +18,6 @@ export async function checkAttendance(client) {
   const userTask = users.map((u) =>
     userLimit(async () => {
       try {
-        // Flag to keep track of if the user has content to send
-        let userHasContent = false;
-
         // Create container for the user
         const container = new ContainerBuilder().addTextDisplayComponents((t) =>
           t.setContent(`## ▼// Sign-in Summary\n-# <t:${Math.floor(Date.now() / 1000)}:F>`)
@@ -35,6 +32,7 @@ export async function checkAttendance(client) {
                 token: a.accountToken,
                 appCode: '6eb76d4e13aa36e6',
               });
+
               if (!oauth || oauth.status !== 0) throw new Error(oauth?.msg || 'OAuth failed');
 
               const cred = await generateCredByCode({ code: oauth.data.code });
@@ -47,8 +45,21 @@ export async function checkAttendance(client) {
                 serverId: a.serverId,
               });
 
-              if (!signin || signin.status !== 0)
-                throw new Error(signin?.msg || 'Attendance failed');
+              const headingString = `### ${a.nickname} (${privacy(a.roleId, a.isPrivate)})`;
+
+              if (!signin || signin.status !== 0) {
+                const err = signin
+                  ? JSON.parse(signin.msg)
+                  : { status: -1, msg: 'Failed to sign in' };
+
+                container.addSeparatorComponents((separator) => separator);
+                container.addTextDisplayComponents((textDisplay) =>
+                  textDisplay.setContent(
+                    `${headingString}\n${codeBlock('json', JSON.stringify(err, null, 2))}`
+                  )
+                );
+                return;
+              }
 
               // Parse main and bonus rewards
               const mainReward = signin.data[0];
@@ -66,11 +77,6 @@ export async function checkAttendance(client) {
 
               await Events.create(u.dcid, { source: 'cron', action: 'attendance', metadata });
 
-              // Early return, no need to add to container if notifications are disabled
-              if (!u.enableNotif) return;
-              userHasContent = true;
-
-              const headingString = `### ${a.nickname} (${privacy(a.roleId, a.isPrivate)})`;
               const mainRewardString = `${mainReward.name}\nAmount: ${mainReward.count}`;
               const bonusString =
                 bonusRewards.length > 0
@@ -97,7 +103,7 @@ export async function checkAttendance(client) {
 
         await Promise.allSettled(accountTasks);
 
-        if (!u.enableNotif || !userHasContent) return;
+        if (!u.enableNotif) return;
 
         try {
           await client.users.send(u.dcid, {
