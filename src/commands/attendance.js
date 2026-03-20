@@ -115,20 +115,14 @@ export default {
 
           if (eventId) {
             await Events.update(user.dcid, eventId, {
-              key: 'aid',
-              value: a.id,
-            });
-            await Events.update(a.dcid, eventId, {
-              key: 'metadata',
-              value: {
+              aid: a.id,
+              metadata: {
                 reward: {
                   name: mainReward.name,
                   count: mainReward.count,
                   icon: mainReward.icon,
                 },
-                ...(bonusRewards.length > 0 && {
-                  bonus: bonusRewards,
-                }),
+                ...(bonusRewards.length > 0 && { bonus: bonusRewards }),
               },
             });
           }

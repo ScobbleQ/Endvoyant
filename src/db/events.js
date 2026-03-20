@@ -18,12 +18,12 @@ export class Events {
    * Update an event
    * @param {string} dcid - The Discord ID
    * @param {number} eventId - The event ID
-   * @param {{ key: keyof typeof events, value: any }} data
+   * @param {{ metadata?: object | null, aid?: string | null }} updates
    */
-  static async update(dcid, eventId, { key, value }) {
+  static async update(dcid, eventId, updates) {
     await db
       .update(events)
-      .set({ [key]: value })
+      .set(updates)
       .where(and(eq(events.dcid, dcid), eq(events.id, eventId)));
   }
   /**

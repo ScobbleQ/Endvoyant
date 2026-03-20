@@ -61,19 +61,14 @@ export async function checkAttendance(client) {
                 .slice(1)
                 .map((r) => ({ name: r.name, count: r.count, icon: r.icon }));
 
-              // Create metadata for the event
-              const metadata = {
-                reward: { name: mainReward.name, count: mainReward.count, icon: mainReward.icon },
-                ...(bonusRewards.length > 0 && {
-                  bonus: bonusRewards,
-                }),
-              };
-
               await Events.create(u.dcid, {
                 aid: a.id,
                 source: 'cron',
                 action: 'attendance',
-                metadata,
+                metadata: {
+                  reward: { name: mainReward.name, count: mainReward.count, icon: mainReward.icon },
+                  ...(bonusRewards.length && { bonus: bonusRewards }),
+                },
               });
 
               const mainRewardString = `${mainReward.name}\nAmount: ${mainReward.count}`;
