@@ -15,6 +15,7 @@ export default {
     .setContexts([0, 1, 2]),
   /** @param {import("discord.js").ChatInputCommandInteraction} interaction */
   async execute(interaction) {
+    // Temporary TESTCODE1 for testing; we will update with a external fetch to get all codes
     let code = interaction.options.getString('code') || 'TESTCODE1';
 
     const user = await Users.getByDcid(interaction.user.id);

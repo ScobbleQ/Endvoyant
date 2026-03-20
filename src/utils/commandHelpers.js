@@ -1,23 +1,25 @@
+import { Accounts } from '#/db/queries.js';
+
 export const MISSING_ACCOUNT_MESSAGE = 'Please add an account with `/add account` to continue.';
 
 /**
  * @param {import('discord.js').AutocompleteInteraction} interaction
  * @param {{
- *   userId?: string | null,
+ *   userId?: string | number | boolean | null,
  *   query?: string,
  *   valueKey?: 'id' | 'shortId',
  * }} [options]
  */
 export async function respondWithAccountAutocomplete(interaction, options = {}) {
-  const { Accounts } = await import('#/db/queries.js');
   const { userId = interaction.user.id, query = '', valueKey = 'id' } = options;
+  const normalizedUserId = typeof userId === 'string' ? userId : null;
 
-  if (!userId || typeof userId !== 'string') {
+  if (!normalizedUserId) {
     await interaction.respond([{ name: 'No user found', value: '-999' }]);
     return;
   }
 
-  const accounts = await Accounts.getByDcid(userId);
+  const accounts = await Accounts.getByDcid(normalizedUserId);
   if (!accounts?.length) {
     await interaction.respond([{ name: 'No accounts found', value: '-999' }]);
     return;

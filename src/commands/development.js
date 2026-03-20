@@ -11,8 +11,9 @@ import {
   MISSING_ACCOUNT_MESSAGE,
   getMissingLinkedAccountMessage,
   parseApiError,
+  resolvePrimaryAccount,
   respondWithAccountAutocomplete,
-} from '#/utils/commandHelpers.js';
+} from '#/utils/index.js';
 import { BotConfig } from '#/config';
 
 /** @param {Array<{ id: string; shortId?: number; isPrimary?: boolean; isPrivate?: boolean }>} accounts @param {number} [shortId] */
@@ -140,9 +141,7 @@ export default {
       return;
     }
 
-    const account = targetAccount
-      ? accounts.find((a) => a.id === targetAccount)
-      : resolveAccount(accounts, 0);
+    const account = targetAccount ? resolvePrimaryAccount(accounts, targetAccount) : resolveAccount(accounts, 0);
     if (!account) {
       await interaction.reply({
         components: [errorContainer('Account not found.')],

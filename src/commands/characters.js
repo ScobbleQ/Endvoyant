@@ -15,7 +15,7 @@ import {
   MISSING_ACCOUNT_MESSAGE,
   parseApiError,
   respondWithAccountAutocomplete,
-} from '#/utils/commandHelpers.js';
+} from '#/utils/index.js';
 import { ProfessionEmojis, PropertyEmojis, RarityEmoji, Rarity2Emoji } from '#/utils/emojis.js';
 import { getMaxLevel, getBreakthroughLevel } from '#/utils/game.js';
 import { generateCharacterBuild } from '#/utils/generateCharacterBuild.js';
@@ -40,9 +40,7 @@ const notFoundImage = new AttachmentBuilder('assets/images/pensive.png');
 
 /** @param {import('discord.js').MessageComponentInteraction} interaction @param {{ msg?: string } | null} result */
 const charactersErrorReply = (interaction, result) =>
-  interaction.editReply({
-    components: [errorContainer(result?.msg || 'Failed to load characters')],
-  });
+  interaction.editReply({ components: [errorContainer(parseApiError(result).msg)] });
 
 /** @param {Characters} c */
 const getProfessionName = (c) => c.charData.profession.value;

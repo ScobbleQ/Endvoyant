@@ -3,7 +3,7 @@ import pLimit from 'p-limit';
 import { errorContainer } from '#/components/index.js';
 import { Accounts, Users, Events } from '#/db/queries.js';
 import { attendance, generateCredByCode, grantOAuth } from '#/skport/api/index.js';
-import { MISSING_ACCOUNT_MESSAGE, respondWithAccountAutocomplete } from '#/utils/commandHelpers.js';
+import { MISSING_ACCOUNT_MESSAGE, respondWithAccountAutocomplete } from '#/utils/index.js';
 import { privacy } from '#/utils/index.js';
 import logger from '#/utils/logger.js';
 import { BotConfig } from '#/config';
@@ -61,6 +61,14 @@ export default {
     }
 
     const accounts = accountQuery ? [accountList.find((a) => a.id === accountQuery)] : accountList;
+    if (accountQuery && !accounts[0]) {
+      await interaction.editReply({
+        components: [errorContainer('Account not found.')],
+        flags: [MessageFlags.IsComponentsV2],
+      });
+      return;
+    }
+
     let hasContent = false;
 
     const c = new ContainerBuilder().addTextDisplayComponents((textDisplay) =>
@@ -138,11 +146,17 @@ export default {
 
     await Promise.allSettled(task);
 
-    if (hasContent) {
+    if (!hasContent) {
       await interaction.editReply({
-        components: [c],
+        components: [errorContainer('Failed to sign in for the selected account(s).')],
         flags: [MessageFlags.IsComponentsV2],
       });
+      return;
     }
+
+    await interaction.editReply({
+      components: [c],
+      flags: [MessageFlags.IsComponentsV2],
+    });
   },
 };

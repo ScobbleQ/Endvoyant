@@ -13,7 +13,7 @@ import {
   parseApiError,
   resolvePrimaryAccount,
   respondWithAccountAutocomplete,
-} from '#/utils/commandHelpers.js';
+} from '#/utils/index.js';
 import { ProfessionEmojis, ProfileEmojis, PropertyEmojis, RarityEmoji } from '#/utils/emojis.js';
 import { privacy } from '#/utils/privacy.js';
 import { BotConfig } from '#/config';
@@ -117,11 +117,10 @@ export default {
         textDisplay.setContent(
           [
             `## ▼// ${profile.data.base.name}`,
-            // expect escape character errors here, its for formatting on Discord
-            `\> Awakening Day: <t:${profile.data.base.createTime}:D>`,
-            `\> UID: ${privacy(profile.data.base.roleId, account.isPrivate)}`,
-            `\> Server: ${profile.data.base.serverName}`,
-            `\> Last Login: <t:${profile.data.base.lastLoginTime}:R>`,
+            `> Awakening Day: <t:${profile.data.base.createTime}:D>`,
+            `> UID: ${privacy(profile.data.base.roleId, account.isPrivate)}`,
+            `> Server: ${profile.data.base.serverName}`,
+            `> Last Login: <t:${profile.data.base.lastLoginTime}:R>`,
           ].join('\n')
         )
       )
