@@ -5,7 +5,7 @@ import {
   StringSelectMenuBuilder,
 } from 'discord.js';
 import { errorContainer, textContainer } from '#/components/index.js';
-import { Accounts, createEvent, Users } from '#/db/queries.js';
+import { Accounts, Events, Users } from '#/db/queries.js';
 import { getCachedCardDetail } from '#/skport/utils/getCachedCardDetail.js';
 import { BotConfig } from '#/config';
 
@@ -189,7 +189,8 @@ export default {
     }
 
     if (BotConfig.environment === 'production') {
-      await createEvent(interaction.user.id, {
+      await Events.create(interaction.user.id, {
+        aid: account.id,
         source: 'slash',
         action: 'exploration',
       });

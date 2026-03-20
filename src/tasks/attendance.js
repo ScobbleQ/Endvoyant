@@ -69,7 +69,12 @@ export async function checkAttendance(client) {
                 }),
               };
 
-              await Events.create(u.dcid, { source: 'cron', action: 'attendance', metadata });
+              await Events.create(u.dcid, {
+                aid: a.id,
+                source: 'cron',
+                action: 'attendance',
+                metadata,
+              });
 
               const mainRewardString = `${mainReward.name}\nAmount: ${mainReward.count}`;
               const bonusString =

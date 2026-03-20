@@ -1,6 +1,6 @@
 import { MessageFlags, SlashCommandBuilder } from 'discord.js';
 import { errorContainer, warningContainer } from '#/components/index.js';
-import { createEvent, getAccount, getUser } from '#/db/queries.js';
+import { Events, getAccount, getUser } from '#/db/queries.js';
 import { BotConfig } from '#/config';
 
 export default {
@@ -39,7 +39,7 @@ export default {
     }
 
     if (user && BotConfig.environment === 'production') {
-      await createEvent(interaction.user.id, {
+      await Events.create(interaction.user.id, {
         source: 'slash',
         action: 'enka',
       });
