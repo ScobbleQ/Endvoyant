@@ -140,6 +140,7 @@ export default {
         textDisplay.setContent(
           [
             `## ▼// ${profile.data.base.name}`,
+            // expect escape character errors here, its for formatting on Discord
             `\> Awakening Day: <t:${profile.data.base.createTime}:D>`,
             `\> UID: ${privacy(profile.data.base.roleId, account.isPrivate)}`,
             `\> Server: ${profile.data.base.serverName}`,

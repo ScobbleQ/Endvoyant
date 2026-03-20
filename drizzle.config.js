@@ -20,6 +20,6 @@ export default defineConfig({
   verbose: true,
   strict: true,
   onSuccess: () => {
-    logger.info('Migration successful');
+    console.info('[Drizzle] Migration successful');
   },
 });

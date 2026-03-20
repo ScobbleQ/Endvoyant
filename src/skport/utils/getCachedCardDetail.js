@@ -1,4 +1,4 @@
-import { getAccount, getUser, Accounts } from '#/db/queries.js';
+import { Accounts } from '#/db/queries.js';
 import { generateCredByCode, grantOAuth } from '../api/auth/index.js';
 import { cardDetail } from '../api/profile/index.js';
 import { getOrCreateCache, getOrSet } from './cache.js';
@@ -16,9 +16,6 @@ const cardDetailCache = getOrCreateCache('card-detail', CARD_DETAIL_TTL);
 export async function getCachedCardDetail(dcid, aid) {
   const cacheKey = `card-${dcid}:${aid}`;
   return getOrSet(cardDetailCache, cacheKey, async () => {
-    const user = await getUser(dcid);
-    if (!user || user.isBanned) return { status: -1, msg: 'User not found or banned' };
-
     const accounts = await Accounts.getByDcid(dcid);
     if (!accounts || accounts.length === 0) return { status: -1, msg: 'SKPort account not found' };
 
@@ -28,10 +25,10 @@ export async function getCachedCardDetail(dcid, aid) {
     if (!account) return { status: -1, msg: 'SKPort account not found' };
 
     const oauth = await grantOAuth({ token: account.accountToken, appCode: '6eb76d4e13aa36e6' });
-    if (!oauth || oauth.status !== 0) return { status: -1, msg: 'Failed to grant OAuth token' };
+    if (oauth.status !== 0) return { status: -1, msg: 'Failed to grant OAuth token' };
 
     const cred = await generateCredByCode({ code: oauth.data.code });
-    if (!cred || cred.status !== 0) return { status: -1, msg: 'Failed to generate credentials' };
+    if (cred.status !== 0) return { status: -1, msg: 'Failed to generate credentials' };
 
     const card = await cardDetail({
       serverId: account.serverId,
@@ -40,7 +37,7 @@ export async function getCachedCardDetail(dcid, aid) {
       token: cred.data.token,
     });
 
-    if (!card || card.status !== 0) {
+    if (card.status !== 0) {
       return { status: -1, msg: card.msg ?? 'Failed to get card detail' };
     }
 
