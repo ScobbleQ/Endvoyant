@@ -6,7 +6,7 @@ import {
   TextDisplayBuilder,
 } from 'discord.js';
 import { errorContainer, textContainer } from '#/components/index.js';
-import { Events, Accounts, Users } from '#/db/queries.js';
+import { Events, Accounts, Users } from '#/db/index.js';
 import { getCachedCardDetail } from '#/skport/utils/getCachedCardDetail.js';
 import { ProfessionEmojis, ProfileEmojis, PropertyEmojis, RarityEmoji } from '#/utils/emojis.js';
 import { privacy } from '#/utils/privacy.js';
@@ -140,10 +140,10 @@ export default {
         textDisplay.setContent(
           [
             `## ▼// ${profile.data.base.name}`,
-            `\> Awakening Day: <t:${profile.data.base.createTime}:D>`,
-            `\> UID: ${privacy(profile.data.base.roleId, account.isPrivate)}`,
-            `\> Server: ${profile.data.base.serverName}`,
-            `\> Last Login: <t:${profile.data.base.lastLoginTime}:R>`,
+            `> Awakening Day: <t:${profile.data.base.createTime}:D>`,
+            `> UID: ${privacy(profile.data.base.roleId, account.isPrivate)}`,
+            `> Server: ${profile.data.base.serverName}`,
+            `> Last Login: <t:${profile.data.base.lastLoginTime}:R>`,
           ].join('\n')
         )
       )

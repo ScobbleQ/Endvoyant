@@ -9,7 +9,7 @@ import {
   loginModal,
   cookieModal,
 } from '#/components/index.js';
-import { Accounts, Events, Users } from '#/db/queries.js';
+import { Accounts, Events, Users } from '#/db/index.js';
 import {
   generateCredByCode,
   getBinding,

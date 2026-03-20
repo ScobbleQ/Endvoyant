@@ -1,4 +1,4 @@
-import { getAccount, getUser, Accounts } from '#/db/queries.js';
+import { Accounts } from '#/db/index.js';
 import { generateCredByCode, grantOAuth } from '../api/auth/index.js';
 import { cardDetail } from '../api/profile/index.js';
 import { getOrCreateCache, getOrSet } from './cache.js';
@@ -16,9 +16,6 @@ const cardDetailCache = getOrCreateCache('card-detail', CARD_DETAIL_TTL);
 export async function getCachedCardDetail(dcid, aid) {
   const cacheKey = `card-${dcid}:${aid}`;
   return getOrSet(cardDetailCache, cacheKey, async () => {
-    const user = await getUser(dcid);
-    if (!user || user.isBanned) return { status: -1, msg: 'User not found or banned' };
-
     const accounts = await Accounts.getByDcid(dcid);
     if (!accounts || accounts.length === 0) return { status: -1, msg: 'SKPort account not found' };
 

@@ -5,7 +5,7 @@ import {
   StringSelectMenuBuilder,
 } from 'discord.js';
 import { errorContainer, textContainer } from '#/components/index.js';
-import { Accounts, Events, Users } from '#/db/queries.js';
+import { Accounts, Events, Users } from '#/db/index.js';
 import { getCachedCardDetail } from '#/skport/utils/getCachedCardDetail.js';
 import { BotConfig } from '#/config';
 

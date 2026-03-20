@@ -8,7 +8,7 @@ import {
   AttachmentBuilder,
 } from 'discord.js';
 import { errorContainer } from '#/components/index.js';
-import { Accounts, Events } from '#/db/queries.js';
+import { Accounts, Events } from '#/db/index.js';
 import { ElementType, Profession } from '#/skport/utils/constants.js';
 import { getCachedCardDetail } from '#/skport/utils/getCachedCardDetail.js';
 import { ProfessionEmojis, PropertyEmojis, RarityEmoji, Rarity2Emoji } from '#/utils/emojis.js';
