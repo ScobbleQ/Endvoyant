@@ -1,7 +1,7 @@
 /**
  * Get OAuth token from SKPort via the app
  * @param {{ token: string }} param0
- * @returns {Promise<{ status: -1, msg: string } | { status: 0, data: { uid: string, email: string, name: string, avatar: string, isLatestUserAgreement: boolean } }>}
+ * @returns {Promise<{ status: -1, msg: string, timestamp: string } | { status: 0, data: { uid: string, email: string, name: string, avatar: string, isLatestUserAgreement: boolean } }>}
  * @example
  * const login = await tokenByEmailPassword('test@example.com', 'password');
  *
@@ -22,16 +22,20 @@ export async function getBasic({ token }) {
 
     if (!res.ok) {
       const msg = await res.text();
-      return { status: -1, msg };
+      return { status: -1, msg, timestamp: Math.floor(Date.now() / 1000).toString() };
     }
 
     const data = await res.json();
     if (data.status !== 0) {
-      return { status: -1, msg: data.msg };
+      return { status: -1, msg: data.msg, timestamp: data.timestamp };
     }
 
     return { status: 0, data: data.data };
   } catch (error) {
-    return { status: -1, msg: /** @type {Error} */ (error).message };
+    return {
+      status: -1,
+      msg: /** @type {Error} */ (error).message,
+      timestamp: Math.floor(Date.now() / 1000).toString(),
+    };
   }
 }

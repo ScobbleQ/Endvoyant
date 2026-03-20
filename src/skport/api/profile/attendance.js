@@ -25,7 +25,7 @@ import { computeSign } from '#/skport/utils/computeSign.js';
 /**
  * Submit attendance to the API
  * @param {{cred: string, token: string, uid: string, serverId: string}} param0
- * @returns {Promise<{ status: -1, msg: string } | { status: 0, data: ResourceItem[] }>}
+ * @returns {Promise<{ status: -1, msg: string, timestamp: string } | { status: 0, data: ResourceItem[] }>}
  * @example
  * // Login with email and password
  * const login = await tokenByEmailPassword('test@example.com', 'password');
@@ -91,12 +91,12 @@ export async function attendance({ cred, token, uid, serverId }) {
 
     if (!res.ok) {
       const msg = await res.text();
-      return { status: -1, msg };
+      return { status: -1, msg, timestamp: Math.floor(Date.now() / 1000).toString() };
     }
 
     const data = await res.json();
     if (data.code !== 0) {
-      return { status: -1, msg: data.message };
+      return { status: -1, msg: data.message, timestamp: data.timestamp };
     }
 
     const resourceItems = data.data.awardIds.map((/** @type {AwardIds} */ award) => {
@@ -105,6 +105,10 @@ export async function attendance({ cred, token, uid, serverId }) {
 
     return { status: 0, data: resourceItems };
   } catch (error) {
-    return { status: -1, msg: /** @type {Error} */ (error).message };
+    return {
+      status: -1,
+      msg: /** @type {Error} */ (error).message,
+      timestamp: Math.floor(Date.now() / 1000).toString(),
+    };
   }
 }

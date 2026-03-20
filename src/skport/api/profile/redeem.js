@@ -4,7 +4,7 @@ import logger from '#/logger';
  *
  * @param {string} code
  * @param {{ channelId: string, serverId: string, token: string }} param1
- * @returns {Promise<{ status: -1, msg: string } | { status: 0, data: { redeemResult: { recordId: string } } }>}
+ * @returns {Promise<{ status: -1, msg: string, timestamp: string } | { status: 0, data: { redeemResult: { recordId: string } } }>}
  */
 export async function redeem(code, { channelId, serverId, token }) {
   const url = 'https://game-hub.gryphline.com/giftcode/api/redeem';
@@ -46,12 +46,12 @@ export async function redeem(code, { channelId, serverId, token }) {
 
     if (!res.ok) {
       const msg = await res.text();
-      return { status: -1, msg };
+      return { status: -1, msg, timestamp: Math.floor(Date.now() / 1000).toString() };
     }
 
     const data = await res.json();
     if (data.code !== 0) {
-      return { status: -1, msg: data.msg };
+      return { status: -1, msg: data.msg, timestamp: data.timestamp };
     }
 
     // not sure how success structure is like, so we log to gather data
@@ -59,6 +59,10 @@ export async function redeem(code, { channelId, serverId, token }) {
 
     return { status: 0, data: data.data };
   } catch (error) {
-    return { status: -1, msg: /** @type {Error} */ (error).message };
+    return {
+      status: -1,
+      msg: /** @type {Error} */ (error).message,
+      timestamp: Math.floor(Date.now() / 1000).toString(),
+    };
   }
 }

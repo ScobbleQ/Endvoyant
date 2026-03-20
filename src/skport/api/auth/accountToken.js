@@ -26,7 +26,7 @@ function parseAccountTokenFromSetCookies(setCookies) {
  * @param {string} accountToken
  * @param {string} skOAuthCredKey
  * @param {string} hgInfoKey
- * @returns {Promise<{ status: -1, msg: string } | { status: 0, data: string }>}
+ * @returns {Promise<{ status: -1, msg: string, timestamp: string } | { status: 0, data: string }>}
  * @example
  * const login = await tokenByEmailPassword('test@example.com', 'password');
  *
@@ -62,18 +62,22 @@ export async function accountToken(accountToken, skOAuthCredKey, hgInfoKey) {
     const res = await fetch(url, { method: 'POST', headers, body: JSON.stringify(requestData) });
     if (!res.ok) {
       const msg = await res.text();
-      return { status: -1, msg };
+      return { status: -1, msg, timestamp: Math.floor(Date.now() / 1000).toString() };
     }
 
     const data = await res.json();
     if (data.code !== 0) {
-      return { status: -1, msg: data.msg };
+      return { status: -1, msg: data.msg, timestamp: data.timestamp };
     }
 
     const setCookies = res.headers.getSetCookie() || [];
     const token = parseAccountTokenFromSetCookies(setCookies);
     return { status: 0, data: token ?? '' };
   } catch (error) {
-    return { status: -1, msg: /** @type {Error} */ (error).message };
+    return {
+      status: -1,
+      msg: /** @type {Error} */ (error).message,
+      timestamp: Math.floor(Date.now() / 1000).toString(),
+    };
   }
 }

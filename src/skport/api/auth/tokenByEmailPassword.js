@@ -2,7 +2,7 @@
  * Get token by email and password from SKPort via the app
  * @param {string} email
  * @param {string} password
- * @returns {Promise<{ status: -1, msg: string } | { status: 0, data: { token: string, hgId: string, email: string, isLatestUserAgreement: boolean } }>}
+ * @returns {Promise<{ status: -1, msg: string, timestamp: string } | { status: 0, data: { token: string, hgId: string, email: string, isLatestUserAgreement: boolean } }>}
  * @example
  * const login = await tokenByEmailPassword('test@example.com', 'password');
  * console.dir(login, { depth: null });
@@ -38,18 +38,22 @@ export async function tokenByEmailPassword(email, password) {
 
     if (!res.ok) {
       const msg = await res.text();
-      return { status: -1, msg };
+      return { status: -1, msg, timestamp: Math.floor(Date.now() / 1000).toString() };
     }
 
     const data = await res.json();
     if (data.status !== 0) {
-      return { status: -1, msg: data.msg };
+      return { status: -1, msg: data.msg, timestamp: data.timestamp };
     }
 
     // Maybe ask the user to complete the captcha if status is 1 (data.data.captcha is present)
 
     return { status: 0, data: data.data };
   } catch (error) {
-    return { status: -1, msg: /** @type {Error} */ (error).message };
+    return {
+      status: -1,
+      msg: /** @type {Error} */ (error).message,
+      timestamp: Math.floor(Date.now() / 1000).toString(),
+    };
   }
 }
