@@ -6,7 +6,6 @@ const ACCOUNT_TOKEN_PREFIX = 'ACCOUNT_TOKEN=';
 /**
  * Extract and URL-decode ACCOUNT_TOKEN from Set-Cookie header strings.
  * @param {string[]} setCookies
- * @returns {string | null}
  */
 function parseAccountTokenFromSetCookies(setCookies) {
   for (const cookie of setCookies) {

@@ -1,7 +1,6 @@
 /**
  * Parse a cookie string from SKPort and extract ACCOUNT_TOKEN, SK_OAUTH_CRED_KEY, and hgId from HG_INFO_KEY.
  * @param {string} cookieString - Raw cookie string (e.g. ACCOUNT_TOKEN=...; SK_OAUTH_CRED_KEY=...; HG_INFO_KEY=...)
- * @returns {{ token: string, credKey: string, hgId: string } | null}
  */
 export const parseCookieToken = (cookieString) => {
   const decoded = decodeURIComponent(cookieString.trim());

@@ -59,7 +59,6 @@ const BOTTOM_SECTOR_END = Math.PI / 2 + BOTTOM_SECTOR_ANGLE / 2;
 /**
  * @param {string} dcid
  * @param {Characters} c
- * @returns {Promise<AttachmentBuilder>}
  */
 export async function generateCharacterBuild(dcid, c) {
   const canvas = createCanvas(1440, 600);
