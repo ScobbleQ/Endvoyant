@@ -6,24 +6,24 @@ export class Events {
   /**
    * Create a new event
    * @param {string} dcid - The Discord ID
-   * @param {{ source: 'slash'|'button'|'modal'|'select'|'cron', action: string, metadata?: { [key: string]: any } | null }} data
+   * @param {{ source: 'slash'|'button'|'modal'|'select'|'cron', action: string, metadata?: { [key: string]: any } | null, aid?: string | null }} data
    */
-  static async create(dcid, { source, action, metadata = null }) {
+  static async create(dcid, { source, action, metadata = null, aid = null }) {
     return await db
       .insert(events)
-      .values({ dcid, source, action, metadata })
+      .values({ dcid, source, action, metadata, aid })
       .returning({ id: events.id });
   }
   /**
    * Update an event
    * @param {string} dcid - The Discord ID
    * @param {number} eventId - The event ID
-   * @param {{ metadata: { [key: string]: any } | null }} data
+   * @param {{ key: keyof typeof events, value: any }} data
    */
-  static async update(dcid, eventId, { metadata }) {
+  static async update(dcid, eventId, { key, value }) {
     await db
       .update(events)
-      .set({ metadata })
+      .set({ [key]: value })
       .where(and(eq(events.dcid, dcid), eq(events.id, eventId)));
   }
   /**

@@ -7,6 +7,7 @@ export const accountsRelations = relations(accounts, ({ one, many }) => ({
     references: [users.dcid],
   }),
   efAttemptedCodes: many(efAttemptedCodes),
+  events: many(events),
 }));
 
 export const usersRelations = relations(users, ({ many }) => ({
@@ -25,5 +26,9 @@ export const eventsRelations = relations(events, ({ one }) => ({
   user: one(users, {
     fields: [events.dcid],
     references: [users.dcid],
+  }),
+  account: one(accounts, {
+    fields: [events.aid],
+    references: [accounts.id],
   }),
 }));

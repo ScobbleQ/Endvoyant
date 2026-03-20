@@ -81,18 +81,3 @@ export async function updateAccount(dcid, aid, { key, value }) {
     .set({ [key]: value })
     .where(and(eq(accounts.dcid, dcid), eq(accounts.id, aid)));
 }
-
-/**
- * Create an event in the database
- * @param {string} dcid - The Discord ID
- * @param {{ source: 'slash'|'button'|'modal'|'select'|'cron', action: string, metadata?: { [key: string]: any } | null }} param0
- * @returns {Promise<{ id: number }>}
- */
-export async function createEvent(dcid, { source, action, metadata = null }) {
-  const res = await db
-    .insert(events)
-    .values({ dcid, source, action, metadata })
-    .returning({ id: events.id });
-
-  return res[0];
-}
