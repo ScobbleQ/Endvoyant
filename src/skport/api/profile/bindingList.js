@@ -1,4 +1,5 @@
 import UserAgent from 'user-agents';
+import logger from '#/logger';
 
 /**
  * @typedef {Object} AccountBinding
@@ -58,18 +59,21 @@ export async function bindingList({ token }) {
   try {
     const res = await fetch(newUrl, { headers });
     if (!res.ok) {
+      logger.fatal(res, 'Line 62 of skport/api/profile/bindingList.js');
       const msg = (await res.text()) || 'Failed to get binding list. Please try again.';
       return { status: -1, msg, timestamp: Math.floor(Date.now() / 1000).toString() };
     }
 
     const data = await res.json();
     if (data.status !== 0) {
+      logger.fatal(data, 'Line 69 of skport/api/profile/bindingList.js');
       const msg = data.msg || 'Failed to get binding list. Please try again.';
-      return { status: -1, msg, timestamp: data.timestamp };
+      return { status: -1, msg, timestamp: Math.floor(Date.now() / 1000).toString() };
     }
 
     return { status: 0, data: data.data.list };
   } catch (error) {
+    logger.fatal(error, 'Line 76 of skport/api/profile/bindingList.js');
     return {
       status: -1,
       msg: /** @type {Error} */ (error).message,

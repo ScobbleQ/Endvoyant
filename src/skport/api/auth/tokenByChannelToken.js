@@ -1,3 +1,5 @@
+import logger from '#/logger';
+
 /**
  * Generate U8 token by channel token via the Game
  * @param {{ channelId: string, channelToken: string }} param0
@@ -40,17 +42,20 @@ export async function tokenByChannelToken({ channelId, channelToken }) {
     });
 
     if (!res.ok) {
+      logger.fatal(res, 'Line 45 of skport/api/auth/tokenByChannelToken.js');
       const msg = await res.text();
       return { status: -1, msg, timestamp: Math.floor(Date.now() / 1000).toString() };
     }
 
     const data = await res.json();
     if (data.status !== 0) {
-      return { status: -1, msg: data.msg, timestamp: data.timestamp };
+      logger.fatal(data, 'Line 52 of skport/api/auth/tokenByChannelToken.js');
+      return { status: -1, msg: data.msg, timestamp: Math.floor(Date.now() / 1000).toString() };
     }
 
     return { status: 0, data: data.data };
   } catch (error) {
+    logger.fatal(error, 'Line 58 of skport/api/auth/tokenByChannelToken.js');
     return {
       status: -1,
       msg: /** @type {Error} */ (error).message,

@@ -45,20 +45,23 @@ export async function redeem(code, { channelId, serverId, token }) {
     });
 
     if (!res.ok) {
+      logger.fatal(res, 'Line 48 of skport/api/profile/redeem.js');
       const msg = await res.text();
       return { status: -1, msg, timestamp: Math.floor(Date.now() / 1000).toString() };
     }
 
     const data = await res.json();
     if (data.code !== 0) {
-      return { status: -1, msg: data.msg, timestamp: data.timestamp };
+      logger.fatal(data, 'Line 55 of skport/api/profile/redeem.js');
+      return { status: -1, msg: data.msg, timestamp: Math.floor(Date.now() / 1000).toString() };
     }
 
     // not sure how success structure is like, so we log to gather data
-    logger.debug(data);
+    logger.info(data);
 
     return { status: 0, data: data.data };
   } catch (error) {
+    logger.fatal(error, 'Line 64 of skport/api/profile/redeem.js');
     return {
       status: -1,
       msg: /** @type {Error} */ (error).message,

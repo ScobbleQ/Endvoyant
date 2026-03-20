@@ -50,9 +50,7 @@ export async function checkAttendance(client) {
               if (signin.status !== 0) {
                 container.addSeparatorComponents((separator) => separator);
                 container.addTextDisplayComponents((textDisplay) =>
-                  textDisplay.setContent(
-                    `${headingString}\n${codeBlock('json', JSON.stringify(signin, null, 2))}}`
-                  )
+                  textDisplay.setContent(`${headingString}\n${signin.msg || 'Unknown error'}`)
                 );
                 return;
               }

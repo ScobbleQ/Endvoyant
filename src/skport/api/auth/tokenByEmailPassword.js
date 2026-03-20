@@ -1,3 +1,5 @@
+import logger from '#/logger';
+
 /**
  * Get token by email and password from SKPort via the app
  * @param {string} email
@@ -37,19 +39,22 @@ export async function tokenByEmailPassword(email, password) {
     });
 
     if (!res.ok) {
+      logger.fatal(res, 'Line 42 of skport/api/auth/tokenByEmailPassword.js');
       const msg = await res.text();
       return { status: -1, msg, timestamp: Math.floor(Date.now() / 1000).toString() };
     }
 
     const data = await res.json();
     if (data.status !== 0) {
-      return { status: -1, msg: data.msg, timestamp: data.timestamp };
+      logger.fatal(data, 'Line 49 of skport/api/auth/tokenByEmailPassword.js');
+      return { status: -1, msg: data.msg, timestamp: Math.floor(Date.now() / 1000).toString() };
     }
 
     // Maybe ask the user to complete the captcha if status is 1 (data.data.captcha is present)
 
     return { status: 0, data: data.data };
   } catch (error) {
+    logger.fatal(error, 'Line 57 of skport/api/auth/tokenByEmailPassword.js');
     return {
       status: -1,
       msg: /** @type {Error} */ (error).message,

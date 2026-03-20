@@ -1,5 +1,6 @@
 import UserAgent from 'user-agents';
 import { computeSign } from '#/skport/utils/computeSign.js';
+import logger from '#/logger';
 
 /**
  * @typedef {Object} AttendanceResponse
@@ -25,7 +26,7 @@ import { computeSign } from '#/skport/utils/computeSign.js';
 /**
  * Submit attendance to the API
  * @param {{cred: string, token: string, uid: string, serverId: string}} param0
- * @returns {Promise<{ status: -1, msg: string | { code: number, message: string }, timestamp: string } | { status: 0, data: ResourceItem[] }>}
+ * @returns {Promise<{ status: -1, msg: string, timestamp: string } | { status: 0, data: ResourceItem[] }>}
  * @example
  * // Login with email and password
  * const login = await tokenByEmailPassword('test@example.com', 'password');
@@ -90,17 +91,19 @@ export async function attendance({ cred, token, uid, serverId }) {
     });
 
     if (!res.ok) {
+      logger.fatal(res, 'Line 94 of skport/api/profile/attendance.js');
       const msg = await res.text();
       const err = JSON.parse(msg);
       return {
         status: -1,
-        msg: { code: err.code, message: err.message },
+        msg: err.message,
         timestamp: err.timestamp,
       };
     }
 
     const data = await res.json();
     if (data.code !== 0) {
+      logger.fatal(data, 'Line 106 of skport/api/profile/attendance.js');
       return { status: -1, msg: data.message, timestamp: data.timestamp };
     }
 
@@ -110,6 +113,7 @@ export async function attendance({ cred, token, uid, serverId }) {
 
     return { status: 0, data: resourceItems };
   } catch (error) {
+    logger.fatal(error, 'Line 116 of skport/api/profile/attendance.js');
     return {
       status: -1,
       msg: /** @type {Error} */ (error).message,

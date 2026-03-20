@@ -1,3 +1,5 @@
+import logger from '#/logger';
+
 /**
  * Generate credentials by code from SKPort via the website
  * @param {{ code: string }} param0
@@ -39,17 +41,20 @@ export async function generateCredByCode({ code }) {
     });
 
     if (!res.ok) {
+      logger.fatal(res, 'Line 44 of skport/api/auth/generateCredByCode.js');
       const msg = await res.text();
       return { status: -1, msg, timestamp: Math.floor(Date.now() / 1000).toString() };
     }
 
     const data = await res.json();
     if (data.code !== 0) {
-      return { status: -1, msg: data.msg, timestamp: data.timestamp };
+      logger.fatal(data, 'Line 51 of skport/api/auth/generateCredByCode.js');
+      return { status: -1, msg: data.msg, timestamp: Math.floor(Date.now() / 1000).toString() };
     }
 
     return { status: 0, data: data.data };
   } catch (error) {
+    logger.fatal(error, 'Line 57 of skport/api/auth/generateCredByCode.js');
     return {
       status: -1,
       msg: /** @type {Error} */ (error).message,

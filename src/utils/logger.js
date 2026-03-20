@@ -14,6 +14,7 @@ const logger = pino({
       { level: 'trace', target: 'pino/file', options: { destination: join(logDir, 'app.log') } },
       { level: 'info', target: 'pino/file', options: { destination: join(logDir, 'info.log') } },
       { level: 'error', target: 'pino/file', options: { destination: join(logDir, 'error.log') } },
+      { level: 'fatal', target: 'pino/file', options: { destination: join(logDir, 'fatal.log') } },
       { target: 'pino-pretty', options: { colorize: true } },
     ],
   },

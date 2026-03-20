@@ -1,3 +1,5 @@
+import logger from '#/logger';
+
 /**
  * @typedef { '6eb76d4e13aa36e6' | '3dacefa138426cfe' | 'd9f6dbb6bbd6bb33' | '973bd727dd11cbb6ead8' } AppCode
  */
@@ -68,17 +70,20 @@ export async function grantOAuth({ token, appCode }) {
     });
 
     if (!res.ok) {
+      logger.fatal(res, 'Line 73 of skport/api/auth/grant.js');
       const msg = await res.text();
       return { status: -1, msg, timestamp: Math.floor(Date.now() / 1000).toString() };
     }
 
     const data = await res.json();
     if (data.status !== 0) {
-      return { status: -1, msg: data.msg, timestamp: data.timestamp };
+      logger.fatal(data, 'Line 80 of skport/api/auth/grant.js');
+      return { status: -1, msg: data.msg, timestamp: Math.floor(Date.now() / 1000).toString() };
     }
 
     return { status: 0, data: data.data };
   } catch (error) {
+    logger.fatal(error, 'Line 86 of skport/api/auth/grant.js');
     return {
       status: -1,
       msg: /** @type {Error} */ (error).message,

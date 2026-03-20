@@ -103,9 +103,7 @@ export default {
           if (signin.status !== 0) {
             c.addSeparatorComponents((separator) => separator);
             c.addTextDisplayComponents((textDisplay) =>
-              textDisplay.setContent(
-                `${headingString}\n${codeBlock('json', JSON.stringify(signin, null, 2))}`
-              )
+              textDisplay.setContent(`${headingString}\n${signin.msg || 'Unknown error'}`)
             );
             return;
           }

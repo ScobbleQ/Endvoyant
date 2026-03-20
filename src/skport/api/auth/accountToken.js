@@ -1,4 +1,5 @@
 import UserAgent from 'user-agents';
+import logger from '#/logger';
 
 const ACCOUNT_TOKEN_PREFIX = 'ACCOUNT_TOKEN=';
 
@@ -61,19 +62,22 @@ export async function accountToken(accountToken, skOAuthCredKey, hgInfoKey) {
   try {
     const res = await fetch(url, { method: 'POST', headers, body: JSON.stringify(requestData) });
     if (!res.ok) {
+      logger.fatal(res, 'Line 65 of skport/api/auth/accountToken.js');
       const msg = await res.text();
       return { status: -1, msg, timestamp: Math.floor(Date.now() / 1000).toString() };
     }
 
     const data = await res.json();
     if (data.code !== 0) {
-      return { status: -1, msg: data.msg, timestamp: data.timestamp };
+      logger.fatal(data, 'Line 72 of skport/api/auth/accountToken.js');
+      return { status: -1, msg: data.msg, timestamp: Math.floor(Date.now() / 1000).toString() };
     }
 
     const setCookies = res.headers.getSetCookie() || [];
     const token = parseAccountTokenFromSetCookies(setCookies);
     return { status: 0, data: token ?? '' };
   } catch (error) {
+    logger.fatal(error, 'Line 80 of skport/api/auth/accountToken.js');
     return {
       status: -1,
       msg: /** @type {Error} */ (error).message,

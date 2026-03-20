@@ -1,3 +1,4 @@
+import logger from '#/logger';
 import { computeSign } from '../../utils/computeSign.js';
 
 /**
@@ -55,17 +56,20 @@ export const refreshToken = async ({ cred, token, hgId }) => {
   try {
     const res = await fetch(url, { method: 'GET', headers: headers });
     if (!res.ok) {
+      logger.fatal(res, 'Line 59 of skport/api/auth/refreshToken.js');
       const msg = await res.text();
       return { status: -1, msg, timestamp: Math.floor(Date.now() / 1000).toString() };
     }
 
     const data = await res.json();
     if (data.code !== 0) {
-      return { status: -1, msg: data.msg, timestamp: data.timestamp };
+      logger.fatal(data, 'Line 66 of skport/api/auth/refreshToken.js');
+      return { status: -1, msg: data.msg, timestamp: Math.floor(Date.now() / 1000).toString() };
     }
 
     return { status: 0, data: data.data };
   } catch (error) {
+    logger.fatal(error, 'Line 72 of skport/api/auth/refreshToken.js');
     return {
       status: -1,
       msg: /** @type {Error} */ (error).message,
