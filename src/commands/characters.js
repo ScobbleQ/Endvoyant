@@ -8,7 +8,7 @@ import {
   AttachmentBuilder,
 } from 'discord.js';
 import { errorContainer } from '#/components/index.js';
-import { Events } from '#/db/queries.js';
+import { Accounts, Events } from '#/db/queries.js';
 import { ElementType, Profession } from '#/skport/utils/constants.js';
 import { getCachedCardDetail } from '#/skport/utils/getCachedCardDetail.js';
 import { ProfessionEmojis, PropertyEmojis, RarityEmoji, Rarity2Emoji } from '#/utils/emojis.js';
@@ -24,9 +24,20 @@ const INITIAL_STATE = {
   profession: 'all',
   element: 'all',
   rarity: 'all',
+  shortId: 0,
 };
 
+/** @param {{ page: number, profession: string, element: string, rarity: string, shortId?: number }} state */
+const toStateStr = (state) =>
+  `${state.page}:${state.profession}:${state.element}:${state.rarity}:${state.shortId ?? 0}`;
+
 const notFoundImage = new AttachmentBuilder('assets/images/pensive.png');
+
+/** @param {import('discord.js').MessageComponentInteraction} interaction @param {{ msg?: string } | null} result */
+const charactersErrorReply = (interaction, result) =>
+  interaction.editReply({
+    components: [errorContainer(result?.msg || 'Failed to load characters')],
+  });
 
 /** @param {Characters} c */
 const getProfessionName = (c) => c.charData.profession.value;
@@ -68,25 +79,50 @@ const substituteTacticalParams = (text, params) => {
 
 /**
  * @param {string} dcid
+ * @param {string} [aid] - Account ID; if omitted, uses primary/first
  * @returns {Promise<{ status: -1, msg: string } | { status: 0, data: Characters[] }>}
  */
-const getCharacters = async (dcid) => {
-  const result = await getCachedCardDetail(dcid);
+const getCharacters = async (dcid, aid) => {
+  const result = await getCachedCardDetail(dcid, aid);
   if (result.status !== 0) return result;
   return { status: 0, data: result.data.chars };
 };
 
 /**
- * @param {string} stateStr - Format: page:profession:element[:rarity]
- * @returns {{ page: number, profession: string, element: string, rarity: string }}
+ * @param {string} stateStr - Format: page:profession:element:rarity[:shortId]
+ * @returns {{ page: number, profession: string, element: string, rarity: string, shortId: number }}
  */
+/** @param {Array<{ id: string, shortId: number, isPrimary: boolean }>} accounts */
+const resolveAccount = (accounts, /** @type {string | null} */ targetShortId) =>
+  targetShortId
+    ? accounts.find((a) => String(a.shortId) === targetShortId)
+    : (accounts.find((a) => a.isPrimary) ?? accounts[0]);
+
+/** @param {{ msg?: string, status?: number } | null} result */
+const parseErrorMsg = (result) => {
+  let code = -1;
+  let msg = result?.msg ?? 'Unknown error';
+  try {
+    const parsed = JSON.parse(result?.msg ?? '{}');
+    code = parsed.code ?? result?.status ?? -1;
+    msg = parsed.message ?? msg;
+  } catch {
+    /* plain string */
+  }
+  return { code, msg };
+};
+
+/** @param {string} stateStr */
 const parseState = (stateStr) => {
-  const [page = '0', profession = 'all', element = 'all', rarity = 'all'] = stateStr.split(':');
+  const parts = stateStr.split(':');
+  const [page = '0', profession = 'all', element = 'all', rarity = 'all', shortIdStr = '0'] = parts;
+  const shortId = parseInt(shortIdStr, 10) || 0;
   return {
     page: Math.max(0, parseInt(page, 10) || 0),
     profession,
     element,
     rarity,
+    shortId,
   };
 };
 
@@ -133,22 +169,22 @@ const matchesRarity = (char, rarity) => {
 
 /**
  * @param {Characters[]} chars
- * @param {{ page: number, profession: string, element: string, rarity: string }} state
+ * @param {{ page: number, profession: string, element: string, rarity: string, shortId?: number }} state
  * @returns {ContainerBuilder}
  */
-const buildCatalogContainer = (chars, { page, profession, element, rarity }) => {
-  const filtered = chars.filter((c) => {
-    return (
+const buildCatalogContainer = (chars, { page, profession, element, rarity, shortId }) => {
+  const sid = shortId ?? 0;
+  const filtered = chars.filter(
+    (c) =>
       matchesProfession(c, profession) && matchesElement(c, element) && matchesRarity(c, rarity)
-    );
-  });
+  );
   const totalPages = Math.max(1, Math.ceil(filtered.length / CHARS_PER_PAGE));
   const clampedPage = Math.min(page, totalPages - 1);
   const pageChars = filtered.slice(
     clampedPage * CHARS_PER_PAGE,
     (clampedPage + 1) * CHARS_PER_PAGE
   );
-  const stateStr = `${clampedPage}:${profession}:${element}:${rarity}`;
+  const stateStr = toStateStr({ page: clampedPage, profession, element, rarity, shortId: sid });
 
   const container = new ContainerBuilder().addTextDisplayComponents((textDisplay) =>
     textDisplay.setContent('## ▼// Owned Operators')
@@ -259,8 +295,20 @@ const buildCatalogContainer = (chars, { page, profession, element, rarity }) => 
   if (filtered.length > CHARS_PER_PAGE) {
     container.addSeparatorComponents((separator) => separator);
 
-    const prevStateStr = `${Math.max(0, clampedPage - 1)}:${profession}:${element}:${rarity}`;
-    const nextStateStr = `${Math.min(totalPages - 1, clampedPage + 1)}:${profession}:${element}:${rarity}`;
+    const prevStateStr = toStateStr({
+      page: Math.max(0, clampedPage - 1),
+      profession,
+      element,
+      rarity,
+      shortId: sid,
+    });
+    const nextStateStr = toStateStr({
+      page: Math.min(totalPages - 1, clampedPage + 1),
+      profession,
+      element,
+      rarity,
+      shortId: sid,
+    });
 
     container.addActionRowComponents((actionRow) =>
       actionRow.addComponents(
@@ -389,8 +437,10 @@ const buildCharacterContainer = (character, catalogStateStr) => {
     .setLabel('Back')
     .setStyle(ButtonStyle.Secondary);
 
+  const sid = catalogStateStr ? parseState(catalogStateStr).shortId : 0;
+  const imagePayload = sid > 0 ? `${character.charData.id}:${sid}` : character.charData.id;
   const toImageButton = new ButtonBuilder()
-    .setCustomId(`characters-image:${character.charData.id}`)
+    .setCustomId(`characters-image:${imagePayload}`)
     .setLabel('Generate Image')
     .setStyle(ButtonStyle.Secondary);
 
@@ -420,6 +470,13 @@ export default {
     .setName('characters')
     .setDescription('View all your obtained operators')
     .addStringOption((option) =>
+      option
+        .setName('account')
+        .setDescription('The account to view the characters of')
+        .setAutocomplete(true)
+        .setRequired(false)
+    )
+    .addStringOption((option) =>
       option.setName('name').setDescription('The name of the character').setAutocomplete(true)
     )
     .setIntegrationTypes([0, 1])
@@ -427,35 +484,82 @@ export default {
 
   /** @param {import('discord.js').AutocompleteInteraction} interaction */
   async autocomplete(interaction) {
-    const { value } = interaction.options.getFocused(true);
-    const characters = await getCharacters(interaction.user.id);
+    const focusedOption = interaction.options.getFocused(true);
 
-    if (!characters || characters.status !== 0) {
-      const code = JSON.parse(characters.msg).code || characters.status || -1;
-      const msg = JSON.parse(characters.msg).message || characters.msg || 'Unknown error';
+    if (focusedOption.name === 'account') {
+      const accounts = await Accounts.getByDcid(interaction.user.id);
+      if (!accounts || accounts.length === 0) {
+        await interaction.respond([{ name: 'No accounts found', value: '-999' }]);
+        return;
+      }
 
-      await interaction.respond([{ name: `[${code}] ${msg}`, value: '-999' }]);
+      const filtered = accounts
+        .filter((a) => a.nickname.toLowerCase().includes(focusedOption.value.toLowerCase()))
+        .slice(0, 25);
+
+      await interaction.respond(
+        filtered.map((a) => ({ name: `${a.nickname} (${a.roleId})`, value: String(a.shortId) }))
+      );
       return;
     }
 
-    const filtered = characters.data
-      .filter((c) => c.charData.name.toLowerCase().includes(value.toLowerCase()))
-      .slice(0, 25);
+    if (focusedOption.name === 'name') {
+      const accounts = await Accounts.getByDcid(interaction.user.id);
+      if (!accounts?.length) {
+        await interaction.respond([{ name: 'No accounts found', value: '-999' }]);
+        return;
+      }
 
-    await interaction.respond(
-      filtered.map((c) => ({ name: c.charData.name, value: c.charData.id }))
-    );
+      const account = resolveAccount(accounts, interaction.options.getString('account'));
+      if (!account) {
+        await interaction.respond([{ name: 'Account not found', value: '-999' }]);
+        return;
+      }
+
+      const characters = await getCharacters(interaction.user.id, account.id);
+      if (!characters || characters.status !== 0) {
+        const { code, msg } = parseErrorMsg(characters);
+        await interaction.respond([{ name: `[${code}] ${msg}`, value: '-999' }]);
+        return;
+      }
+
+      const filtered = characters.data
+        .filter((c) => c.charData.name.toLowerCase().includes(focusedOption.value.toLowerCase()))
+        .slice(0, 25);
+
+      await interaction.respond(
+        filtered.map((c) => ({ name: c.charData.name, value: c.charData.id }))
+      );
+    }
   },
   /** @param {import('discord.js').ChatInputCommandInteraction} interaction */
   async execute(interaction) {
     const selected = interaction.options.getString('name');
+    const targetAccount = interaction.options.getString('account');
     await interaction.deferReply();
 
-    const characters = await getCharacters(interaction.user.id);
-    if (!characters || characters.status !== 0) {
-      const code = JSON.parse(characters.msg).code || characters.status || -1;
-      const msg = JSON.parse(characters.msg).message || characters.msg || 'Unknown error';
+    const accounts = await Accounts.getByDcid(interaction.user.id);
+    if (!accounts?.length) {
+      await interaction.editReply({
+        components: [errorContainer('Please add an account with `/add account` to continue.')],
+        flags: [MessageFlags.IsComponentsV2],
+      });
+      return;
+    }
 
+    const account = resolveAccount(accounts, targetAccount);
+
+    if (!account) {
+      await interaction.editReply({
+        components: [errorContainer('Account not found.')],
+        flags: [MessageFlags.IsComponentsV2],
+      });
+      return;
+    }
+
+    const characters = await getCharacters(interaction.user.id, account.id);
+    if (!characters || characters.status !== 0) {
+      const { code, msg } = parseErrorMsg(characters);
       await interaction.editReply({
         components: [errorContainer(`[${code}] ${msg}`)],
         flags: [MessageFlags.IsComponentsV2],
@@ -476,15 +580,18 @@ export default {
         await interaction.editReply({ components: [errorContainer('Character not found')] });
         return;
       }
+      const catalogStateStr = toStateStr({ ...INITIAL_STATE, shortId: account.shortId });
       await interaction.editReply({
-        components: [buildCharacterContainer(character)],
+        components: [buildCharacterContainer(character, catalogStateStr)],
         flags: [MessageFlags.IsComponentsV2],
       });
       return;
     }
 
     await interaction.editReply({
-      components: [buildCatalogContainer(characters.data, INITIAL_STATE)],
+      components: [
+        buildCatalogContainer(characters.data, { ...INITIAL_STATE, shortId: account.shortId }),
+      ],
       files: [notFoundImage],
       flags: [MessageFlags.IsComponentsV2],
     });
@@ -494,11 +601,38 @@ export default {
     const { action, payload } = parseButtonArgs(args);
     await interaction.deferUpdate();
 
-    const characters = await getCharacters(interaction.user.id);
+    const resolveAidFromShortId = async (/** @type {number} */ shortId) => {
+      if (!shortId) return undefined;
+      const account = await Accounts.getByDcidAndShortId(interaction.user.id, shortId);
+      return account?.id;
+    };
+
+    if (action === 'catalog') {
+      const stateStr = args[1];
+      const state = stateStr ? parseState(stateStr) : INITIAL_STATE;
+      const aid = await resolveAidFromShortId(state.shortId);
+      const characters = await getCharacters(interaction.user.id, aid);
+      if (!characters || characters.status !== 0) {
+        await charactersErrorReply(interaction, characters);
+        return;
+      }
+      const container = buildCatalogContainer(characters.data, state);
+      await interaction.editReply({ components: [container], files: [notFoundImage] });
+      return;
+    }
+
+    const shortId = ['view', 'page', 'rarity'].includes(action)
+      ? parseState(payload).shortId
+      : action === 'image'
+        ? (() => {
+            const [, sid] = payload.split(':');
+            return parseInt(sid, 10) || 0;
+          })()
+        : 0;
+    const aid = await resolveAidFromShortId(shortId);
+    const characters = await getCharacters(interaction.user.id, aid);
     if (!characters || characters.status !== 0) {
-      await interaction.editReply({
-        components: [errorContainer(characters?.msg || 'Failed to load characters')],
-      });
+      await charactersErrorReply(interaction, characters);
       return;
     }
 
@@ -511,14 +645,6 @@ export default {
           components: [buildCharacterContainer(character, catalogStateStr)],
         });
       }
-      return;
-    }
-
-    if (action === 'catalog') {
-      const stateStr = args[1];
-      const state = stateStr ? parseState(stateStr) : INITIAL_STATE;
-      const container = buildCatalogContainer(characters.data, state);
-      await interaction.editReply({ components: [container], files: [notFoundImage] });
       return;
     }
 
@@ -542,7 +668,8 @@ export default {
     }
 
     if (action === 'image' && payload) {
-      const character = characters.data.find((c) => c.charData.id === payload);
+      const charId = payload.includes(':') ? payload.split(':')[0] : payload;
+      const character = characters.data.find((c) => c.charData.id === charId);
       if (character) {
         const attachment = await generateCharacterBuild(interaction.user.id, character);
         await interaction.followUp({ files: [attachment] });
@@ -561,11 +688,13 @@ export default {
     const profession = filterWhich === 'opclass' ? selectedValue : state.profession;
     const element = filterWhich === 'element' ? selectedValue : state.element;
 
-    const characters = await getCharacters(interaction.user.id);
+    const aid = state.shortId
+      ? (await Accounts.getByDcidAndShortId(interaction.user.id, state.shortId))?.id
+      : undefined;
+
+    const characters = await getCharacters(interaction.user.id, aid);
     if (!characters || characters.status !== 0) {
-      await interaction.editReply({
-        components: [errorContainer(characters?.msg || 'Failed to load characters')],
-      });
+      await charactersErrorReply(interaction, characters);
       return;
     }
 
@@ -574,6 +703,7 @@ export default {
       profession,
       element,
       rarity: state.rarity ?? 'all',
+      shortId: state.shortId,
     });
     await interaction.editReply({ components: [container], files: [notFoundImage] });
   },

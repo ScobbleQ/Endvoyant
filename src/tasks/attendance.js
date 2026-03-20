@@ -1,130 +1,122 @@
-import { ContainerBuilder, MessageFlags } from 'discord.js';
+import { ContainerBuilder, DiscordAPIError, MessageFlags, codeBlock } from 'discord.js';
 import pLimit from 'p-limit';
-import { createEvent, getAccount, getAllUsersWithAttendance, updateAccount } from '#/db/queries.js';
+import { Users, Accounts, Events } from '#/db/queries.js';
 import { attendance, generateCredByCode, grantOAuth } from '#/skport/api/index.js';
 import { privacy } from '#/utils/privacy.js';
 import logger from '#/logger';
 
-/**
- *
- * @param {import('discord.js').Client} client
- */
+/** @param {import('discord.js').Client} client */
 export async function checkAttendance(client) {
-  // Random delay between 0 and 55 minutes
   const delay = Math.floor(Math.random() * 56) * 60 * 1000;
   await new Promise((resolve) => setTimeout(resolve, delay));
 
-  const users = await getAllUsersWithAttendance();
-  logger.info(`[Cron:Attendance] Checking attendance for ${users.length} users`);
-  const limit = pLimit(10);
+  const users = await Accounts.getSigninByUser();
+  logger.info(`[Cron:Attendance] Checking ${users.length} users`);
 
-  const task = users.map((u) =>
-    limit(async () => {
+  // Process users in parallel
+  const userLimit = pLimit(10);
+  const userTask = users.map((u) =>
+    userLimit(async () => {
       try {
-        const skport = await getAccount(u.dcid);
-        if (!skport) throw new Error("User's SKPort data not found");
+        // Create container for the user
+        const container = new ContainerBuilder().addTextDisplayComponents((t) =>
+          t.setContent(`## ▼// Sign-in Summary\n-# <t:${Math.floor(Date.now() / 1000)}:F>`)
+        );
 
-        const oauth = await grantOAuth({ token: skport.accountToken, appCode: '6eb76d4e13aa36e6' });
-        if (!oauth || oauth.status !== 0) throw new Error(oauth?.msg ?? 'OAuth failed');
+        // Process accounts in parallel
+        const accountLimit = pLimit(5);
+        const accountTasks = u.accounts.map((a) =>
+          accountLimit(async () => {
+            try {
+              const oauth = await grantOAuth({
+                token: a.accountToken,
+                appCode: '6eb76d4e13aa36e6',
+              });
 
-        const cred = await generateCredByCode({ code: oauth.data.code });
-        if (!cred || cred.status !== 0) {
-          throw new Error(cred?.msg ?? 'Credential generation failed');
-        }
+              if (oauth.status !== 0) throw new Error(oauth.msg || 'OAuth failed');
 
-        const attendanceRes = await attendance({
-          cred: cred.data.cred,
-          token: cred.data.token,
-          uid: skport.roleId,
-          serverId: skport.serverId,
-        });
+              const cred = await generateCredByCode({ code: oauth.data.code });
+              if (cred.status !== 0) throw new Error(cred.msg || 'Credential failed');
 
-        if (!attendanceRes || attendanceRes.status !== 0) {
-          throw new Error(attendanceRes?.msg ?? 'Attendance claim failed');
-        }
+              const signin = await attendance({
+                cred: cred.data.cred,
+                token: cred.data.token,
+                uid: a.roleId,
+                serverId: a.serverId,
+              });
 
-        /** @type {{ type: string, reward: { name: string, count: number, icon: string }, bonus?: { name: string, count: number, icon: string }[] }} */
-        const metadata = {
-          type: 'attendance',
-          reward: {
-            name: attendanceRes.data[0].name,
-            count: attendanceRes.data[0].count,
-            icon: attendanceRes.data[0].icon,
-          },
-        };
+              const headingString = `### ${a.nickname} (${privacy(a.roleId, a.isPrivate)})`;
 
-        // If there are bonus rewards, add them to the metadata
-        if (attendanceRes.data.length > 1) {
-          metadata.bonus = attendanceRes.data.slice(1).map((r) => ({
-            name: r.name,
-            count: r.count,
-            icon: r.icon,
-          }));
-        }
+              if (signin.status !== 0) {
+                container.addSeparatorComponents((separator) => separator);
+                container.addTextDisplayComponents((textDisplay) =>
+                  textDisplay.setContent(`${headingString}\n${signin.msg || 'Unknown error'}`)
+                );
+                return;
+              }
 
-        await createEvent(u.dcid, {
-          source: 'cron',
-          action: 'attendance',
-          metadata,
-        });
+              // Parse main and bonus rewards
+              const mainReward = signin.data[0];
+              const bonusRewards = signin.data
+                .slice(1)
+                .map((r) => ({ name: r.name, count: r.count, icon: r.icon }));
 
-        if (skport.enableNotif) {
-          const container = new ContainerBuilder().addTextDisplayComponents((textDisplay) =>
-            textDisplay.setContent(
-              `# ▼// Sign-in Summary\n-# <t:${Math.floor(Date.now() / 1000)}:F>`
-            )
-          );
+              // Create metadata for the event
+              const metadata = {
+                reward: { name: mainReward.name, count: mainReward.count, icon: mainReward.icon },
+                ...(bonusRewards.length > 0 && {
+                  bonus: bonusRewards,
+                }),
+              };
 
-          container.addSeparatorComponents((separator) => separator);
+              await Events.create(u.dcid, { source: 'cron', action: 'attendance', metadata });
 
-          for (let i = 0; i < attendanceRes.data.length; i++) {
-            const accountInfo = `${skport.nickname} (${privacy(skport.roleId, skport.isPrivate)})`;
-            const reward = attendanceRes.data[i];
+              const mainRewardString = `${mainReward.name}\nAmount: ${mainReward.count}`;
+              const bonusString =
+                bonusRewards.length > 0
+                  ? `Additional Rewards:\n${bonusRewards.map((r) => `${r.name} x${r.count}`).join('\n')}`
+                  : '';
 
-            // First reward is the main reward
-            if (i === 0) {
+              container.addSeparatorComponents((separator) => separator);
               container.addSectionComponents((section) =>
                 section
                   .addTextDisplayComponents((textDisplay) =>
                     textDisplay.setContent(
-                      `### ${accountInfo}\n${reward.name}\nAmount: **${reward.count}**`
+                      `${headingString}\n${mainRewardString}\n\n${bonusString}`
                     )
                   )
-                  .setThumbnailAccessory((thumbnail) => thumbnail.setURL(reward.icon))
+                  .setThumbnailAccessory((thumbnail) => thumbnail.setURL(mainReward.icon))
               );
-            } else {
-              container.addSectionComponents((section) =>
-                section
-                  .addTextDisplayComponents((textDisplay) =>
-                    textDisplay.setContent(
-                      `__Bonus Reward:__\n${reward.name}\nAmount: **${reward.count}**`
-                    )
-                  )
-                  .setThumbnailAccessory((thumbnail) => thumbnail.setURL(reward.icon))
-              );
-            }
-          }
 
-          try {
-            await client.users.send(u.dcid, {
-              components: [container],
-              flags: [MessageFlags.IsComponentsV2],
-            });
-          } catch (/** @type {any} */ error) {
-            logger.error(error, `[Cron:Attendance] Failed to DM user ${u.dcid}`);
-            if (error.code === 50007) {
-              logger.error(`[Cron:Attendance] User ${u.dcid} has DMs disabled`);
-              await updateAccount(u.dcid, skport.id, { key: 'enableNotif', value: false });
+              return { account: a, rewards: signin.data };
+            } catch (err) {
+              logger.error(err, `[Cron:Attendance] Error for ${u.dcid}:${a.id}`);
             }
+          })
+        );
+
+        await Promise.allSettled(accountTasks);
+
+        if (!u.enableNotif) return;
+
+        try {
+          await client.users.send(u.dcid, {
+            components: [container],
+            flags: [MessageFlags.IsComponentsV2],
+          });
+        } catch (error) {
+          logger.error(error, `[Cron:Attendance] Failed to DM ${u.dcid}`);
+          if (error instanceof DiscordAPIError && error.code === 50007) {
+            await Users.update(u.dcid, { key: 'enableNotif', value: false });
           }
         }
       } catch (error) {
-        logger.error(error, `[Cron:Attendance] Error checking attendance for user ${u.dcid}`);
+        logger.error(error, `[Cron:Attendance] Error for ${u.dcid}`);
       }
     })
   );
 
-  await Promise.allSettled(task).then(() => {
+  await Promise.allSettled(userTask).then(() => {
     logger.info('[Cron:Attendance] Attendance checked');
   });
 }

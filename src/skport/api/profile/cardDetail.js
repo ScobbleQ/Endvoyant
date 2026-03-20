@@ -1,4 +1,5 @@
 import { computeSign } from '#/skport/utils/computeSign.js';
+import logger from '#/logger';
 
 /**
  * @typedef {Object} CardDetail
@@ -110,7 +111,7 @@ import { computeSign } from '#/skport/utils/computeSign.js';
 /**
  *
  * @param {{ serverId: string, roleId: string, cred: string, token: string }} param0
- * @returns {Promise<{ status: -1, msg: string } | { status: 0, data: CardDetail }>}
+ * @returns {Promise<{ status: -1, msg: string, timestamp: string } | { status: 0, data: CardDetail }>}
  * @example
  * // Login with email and password
  * const login = await tokenByEmailPassword('test@example.com', 'password');
@@ -176,17 +177,24 @@ export async function cardDetail({ serverId, roleId, cred, token }) {
     });
 
     if (!res.ok) {
+      logger.fatal(res, 'Line 180 of skport/api/profile/cardDetail.js');
       const msg = await res.text();
-      return { status: -1, msg };
+      return { status: -1, msg, timestamp: Math.floor(Date.now() / 1000).toString() };
     }
 
     const data = await res.json();
     if (data.code !== 0) {
-      return { status: -1, msg: data.message };
+      logger.fatal(data, 'Line 187 of skport/api/profile/cardDetail.js');
+      return { status: -1, msg: data.message, timestamp: Math.floor(Date.now() / 1000).toString() };
     }
 
     return { status: 0, data: data.data.detail };
   } catch (error) {
-    return { status: -1, msg: /** @type {Error} */ (error).message };
+    logger.fatal(error, 'Line 193 of skport/api/profile/cardDetail.js');
+    return {
+      status: -1,
+      msg: /** @type {Error} */ (error).message,
+      timestamp: Math.floor(Date.now() / 1000).toString(),
+    };
   }
 }

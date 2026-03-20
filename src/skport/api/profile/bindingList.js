@@ -1,4 +1,5 @@
 import UserAgent from 'user-agents';
+import logger from '#/logger';
 
 /**
  * @typedef {Object} AccountBinding
@@ -22,7 +23,7 @@ import UserAgent from 'user-agents';
 /**
  *
  * @param {{ token: string }} param0
- * @returns {Promise<{ status: -1, msg: string } | { status: 0, data: AccountBinding[] }>}
+ * @returns {Promise<{ status: -1, msg: string, timestamp: string } | { status: 0, data: AccountBinding[] }>}
  * @example
  * // Login and get OAuth token
  * const login = await tokenByEmailPassword('test@example.com', 'password');
@@ -58,18 +59,25 @@ export async function bindingList({ token }) {
   try {
     const res = await fetch(newUrl, { headers });
     if (!res.ok) {
+      logger.fatal(res, 'Line 62 of skport/api/profile/bindingList.js');
       const msg = (await res.text()) || 'Failed to get binding list. Please try again.';
-      return { status: -1, msg };
+      return { status: -1, msg, timestamp: Math.floor(Date.now() / 1000).toString() };
     }
 
     const data = await res.json();
     if (data.status !== 0) {
+      logger.fatal(data, 'Line 69 of skport/api/profile/bindingList.js');
       const msg = data.msg || 'Failed to get binding list. Please try again.';
-      return { status: -1, msg };
+      return { status: -1, msg, timestamp: Math.floor(Date.now() / 1000).toString() };
     }
 
     return { status: 0, data: data.data.list };
   } catch (error) {
-    return { status: -1, msg: /** @type {Error} */ (error).message };
+    logger.fatal(error, 'Line 76 of skport/api/profile/bindingList.js');
+    return {
+      status: -1,
+      msg: /** @type {Error} */ (error).message,
+      timestamp: Math.floor(Date.now() / 1000).toString(),
+    };
   }
 }

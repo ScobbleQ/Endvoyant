@@ -3,13 +3,13 @@ import {
   pgTable,
   uniqueIndex,
   foreignKey,
+  unique,
   uuid,
   text,
   timestamp,
   boolean,
-  unique,
-  bigint,
   smallint,
+  bigint,
   jsonb,
 } from 'drizzle-orm/pg-core';
 
@@ -33,6 +33,9 @@ export const accounts = pgTable(
     enableSignin: boolean('enable_signin').default(true).notNull(),
     enableRedeem: boolean('enable_redeem').default(true).notNull(),
     isPrimary: boolean('is_primary').default(false).notNull(),
+    shortId: smallint('short_id')
+      .default(sql`'1'`)
+      .notNull(),
   },
   (table) => [
     uniqueIndex('accounts_one_primary_per_user')
@@ -45,6 +48,7 @@ export const accounts = pgTable(
     })
       .onUpdate('cascade')
       .onDelete('cascade'),
+    unique('accounts_dcid_short_id_key').on(table.dcid, table.shortId),
   ]
 );
 
@@ -136,4 +140,5 @@ export const users = pgTable('users', {
   dcid: text().primaryKey().notNull(),
   createdAt: timestamp('created_at', { withTimezone: true, mode: 'string' }).defaultNow().notNull(),
   isBanned: boolean('is_banned').default(false).notNull(),
+  enableNotif: boolean('enable_notif').default(true).notNull(),
 });

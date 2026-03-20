@@ -1,17 +1,22 @@
-import { and, eq } from 'drizzle-orm';
+import { and, asc, desc, eq, sql } from 'drizzle-orm';
 import { db } from './index.js';
-import { accounts } from './schema.js';
+import { accounts, users } from './schema.js';
 
 export class Accounts {
   /**
    * Create a new account
    * @param {string} dcid - The Discord ID
-   * @param {Omit<typeof accounts.$inferInsert, 'dcid'>} data
+   * @param {Omit<typeof accounts.$inferInsert, 'dcid' | 'shortId'>} data
    */
   static async create(dcid, data) {
+    const [next] = await db
+      .select({ next: sql`COALESCE(MAX(${accounts.shortId}), 0) + 1` })
+      .from(accounts)
+      .where(eq(accounts.dcid, dcid));
+    const shortId = Number(next?.next ?? 1);
     return await db
       .insert(accounts)
-      .values({ dcid, ...data })
+      .values({ dcid, shortId, ...data })
       .returning({ id: accounts.id });
   }
   /**
@@ -21,6 +26,25 @@ export class Accounts {
   static async getByDcid(dcid) {
     return await db.query.accounts.findMany({
       where: eq(accounts.dcid, dcid),
+    });
+  }
+  /**
+   * Get an account by dcid and shortId
+   * @param {string} dcid - The Discord ID
+   * @param {number} shortId - The short account ID (1, 2, 3... per user)
+   */
+  static async getByDcidAndShortId(dcid, shortId) {
+    return await db.query.accounts.findFirst({
+      where: and(eq(accounts.dcid, dcid), eq(accounts.shortId, shortId)),
+    });
+  }
+  /**
+   * Get the primary account by dcid
+   * @param {string} dcid - The Discord ID
+   */
+  static async getPrimaryByDcid(dcid) {
+    return await db.query.accounts.findFirst({
+      where: and(eq(accounts.dcid, dcid), eq(accounts.isPrimary, true)),
     });
   }
   /**
@@ -40,10 +64,33 @@ export class Accounts {
    * @param {keyof typeof accounts.$inferSelect} key - The key to match
    * @param {any} value - The value to match
    */
-  static async getMatchingAccount(key, value) {
+  static async getDcidOfMatchingAccount(key, value) {
     return await db.query.accounts.findMany({
+      columns: {
+        dcid: true,
+      },
       where: eq(accounts[key], value),
     });
+  }
+  /**
+   * Get accounts with enableSignin, grouped by user.
+   */
+  static async getSigninByUser() {
+    const rows = await db
+      .select({
+        account: accounts,
+        user: users,
+      })
+      .from(accounts)
+      .innerJoin(users, eq(accounts.dcid, users.dcid))
+      .where(eq(accounts.enableSignin, true))
+      .orderBy(desc(accounts.isPrimary), asc(accounts.addedOn));
+
+    const byUser = Map.groupBy(rows, (row) => row.user.dcid);
+    return [...byUser.values()].map((group) => ({
+      ...group[0].user,
+      accounts: group.map((r) => r.account),
+    }));
   }
   /**
    * Check if an account exists by HG ID, role ID and server ID

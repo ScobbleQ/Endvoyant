@@ -6,7 +6,7 @@ import {
   TextDisplayBuilder,
 } from 'discord.js';
 import { errorContainer, textContainer } from '#/components/index.js';
-import { createEvent, getAccount, getUser } from '#/db/queries.js';
+import { createEvent, getUser, Accounts, Users } from '#/db/queries.js';
 import { getCachedCardDetail } from '#/skport/utils/getCachedCardDetail.js';
 import { ProfessionEmojis, ProfileEmojis, PropertyEmojis, RarityEmoji } from '#/utils/emojis.js';
 import { privacy } from '#/utils/privacy.js';
@@ -16,23 +16,89 @@ export default {
   data: new SlashCommandBuilder()
     .setName('profile')
     .setDescription('Get your profile information')
+    .addUserOption((option) =>
+      option.setName('user').setDescription('The user to view the profile of').setRequired(false)
+    )
+    .addStringOption((option) =>
+      option
+        .setName('account')
+        .setDescription('The account to view the profile of')
+        .setAutocomplete(true)
+        .setRequired(false)
+    )
     .setIntegrationTypes([0, 1])
     .setContexts([0, 1, 2]),
+  /** @param {import("discord.js").AutocompleteInteraction} interaction */
+  async autocomplete(interaction) {
+    const focusedOptions = interaction.options.getFocused(true);
+    const userId = interaction.options.get('user')?.value || interaction.user.id;
+    if (!userId || typeof userId !== 'string') {
+      await interaction.respond([{ name: 'No user found', value: '-999' }]);
+      return;
+    }
+
+    const accounts = await Accounts.getByDcid(userId);
+    if (!accounts || accounts.length === 0) {
+      await interaction.respond([{ name: 'No accounts found', value: '-999' }]);
+      return;
+    }
+
+    const filtered = accounts
+      .filter((a) => a.nickname.toLowerCase().includes(focusedOptions.value.toLowerCase()))
+      .slice(0, 25);
+
+    await interaction.respond(
+      filtered.map((a) => ({ name: `${a.nickname} (${a.roleId})`, value: a.id }))
+    );
+  },
   /** @param {import("discord.js").ChatInputCommandInteraction} interaction */
   async execute(interaction) {
-    const user = await getUser(interaction.user.id);
-    if (!user) {
+    const targetUser = interaction.options.getUser('user');
+    const targetAccount = interaction.options.getString('account');
+
+    const dcid = targetUser?.id || interaction.user.id;
+    const accounts = await Accounts.getByDcid(dcid);
+
+    if (!accounts?.length) {
       await interaction.reply({
-        components: [errorContainer('Please add an account with `/add account` to continue.')],
+        components: [
+          errorContainer(
+            targetUser
+              ? 'That user has no linked accounts.'
+              : 'Please add an account with `/add account` to continue.'
+          ),
+        ],
         flags: [MessageFlags.Ephemeral, MessageFlags.IsComponentsV2],
       });
       return;
     }
 
-    const account = await getAccount(interaction.user.id);
-    if (!account) {
+    let account;
+    if (targetAccount) {
+      account = accounts.find((a) => a.id === targetAccount);
+      if (!account) {
+        await interaction.reply({
+          components: [errorContainer('Account not found.')],
+          flags: [MessageFlags.Ephemeral, MessageFlags.IsComponentsV2],
+        });
+        return;
+      }
+    } else {
+      account = accounts.find((a) => a.isPrimary) || accounts[0];
+    }
+
+    if (account && account.isPrivate) {
       await interaction.reply({
-        components: [errorContainer('Please add an account with `/add account` to continue.')],
+        components: [errorContainer('That account is private.')],
+        flags: [MessageFlags.Ephemeral, MessageFlags.IsComponentsV2],
+      });
+      return;
+    }
+
+    const user = await Users.getByDcid(dcid);
+    if (!user || user.isBanned) {
+      await interaction.reply({
+        components: [errorContainer('User not found or banned.')],
         flags: [MessageFlags.Ephemeral, MessageFlags.IsComponentsV2],
       });
       return;
@@ -50,11 +116,10 @@ export default {
       flags: [MessageFlags.IsComponentsV2],
     });
 
-    const profile = await getCachedCardDetail(interaction.user.id);
+    const profile = await getCachedCardDetail(dcid, account.id);
     if (!profile || profile.status !== 0) {
       const code = JSON.parse(profile.msg).code || profile.status || -1;
       const msg = JSON.parse(profile.msg).message || profile.msg || 'Unknown error';
-
       await interaction.editReply({
         components: [errorContainer(`[${code}] ${msg}`)],
         flags: [MessageFlags.IsComponentsV2],

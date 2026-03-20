@@ -26,7 +26,7 @@ import { computeSign } from '#/skport/utils/computeSign.js';
 /**
  * Get the binding list from the API
  * @param {{ cred: string, token: string }} param0
- * @returns {Promise<{ status: -1, msg: string } | { status: 0, data: PlayerBinding[] }>}
+ * @returns {Promise<{ status: -1, msg: string, timestamp: string } | { status: 0, data: PlayerBinding[] }>}
  * @example
  * // Login with email and password
  * const login = await tokenByEmailPassword('test@example.com', 'password');
@@ -81,12 +81,16 @@ export async function getBinding({ cred, token }) {
 
     if (!res.ok) {
       const msg = await res.text();
-      return { status: -1, msg };
+      return { status: -1, msg, timestamp: Math.floor(Date.now() / 1000).toString() };
     }
 
     const data = await res.json();
     return { status: 0, data: data.data.list };
   } catch (error) {
-    return { status: -1, msg: /** @type {Error} */ (error).message };
+    return {
+      status: -1,
+      msg: /** @type {Error} */ (error).message,
+      timestamp: Math.floor(Date.now() / 1000).toString(),
+    };
   }
 }
