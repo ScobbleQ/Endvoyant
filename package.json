@@ -22,7 +22,7 @@
   "main": "index.js",
   "imports": {
     "#/*": "./src/*",
-    "#/config": "./config.js",
+    "#/config": "./src/config/index.js",
     "#/logger": "./src/utils/logger.js",
     "#/types/*": "./src/types/*.js"
   },

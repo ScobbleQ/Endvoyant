@@ -32,7 +32,7 @@ function toCachedBulletinEvent(online, detail, topic) {
 }
 
 /**
- * @param {import('../../../dictionary/lang.js').Language} [lang='en-us']
+ * @param {import('#/constants/languages.js').Language} [lang='en-us']
  * @returns {Promise<{ status: -1, msg: string } | { status: 0, data: Bulletin }>}
  */
 export async function getCachedEvents(lang = 'en-us') {
@@ -50,7 +50,7 @@ export async function getCachedEvents(lang = 'en-us') {
 
 /**
  * @param {string} bulletinId - Usually the list item `cid`
- * @param {import('../../../dictionary/lang.js').Language} [lang='en-us']
+ * @param {import('#/constants/languages.js').Language} [lang='en-us']
  * @returns {Promise<{ status: -1, msg: string } | { status: 0, data: BulletinDetail }>}
  */
 export async function getCachedEventDetail(bulletinId, lang = 'en-us') {
@@ -68,7 +68,7 @@ export async function getCachedEventDetail(bulletinId, lang = 'en-us') {
  * Single bulletin (`onlineList[].cid`) plus per-cid detail, merged and cached as one payload.
  * Detail fetches reuse `getCachedEventDetail` (per-cid cache).
  *
- * @param {import('../../../dictionary/lang.js').Language} [lang='en-us']
+ * @param {import('#/constants/languages.js').Language} [lang='en-us']
  * @returns {Promise<{ status: -1, msg: string } | { status: 0, data: CachedBulletinEvent[], byCid: Record<string, CachedBulletinEvent> }>}
  */
 export async function getCachedEnrichedEvents(lang = 'en-us') {

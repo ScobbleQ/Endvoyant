@@ -1,3 +1,4 @@
+// Prototype command kept outside src so it is not auto-loaded into production.
 // @ts-ignore
 
 import { ContainerBuilder, MessageFlags, SlashCommandBuilder } from 'discord.js';
@@ -5,9 +6,8 @@ import { getOperators } from '../src/skport/api/wiki/operators.js';
 import { getWeapons } from '../src/skport/api/wiki/weapons.js';
 import { getOrCreateCache, getOrSet } from '../src/skport/utils/cache.js';
 import { resolveSubType } from '../src/skport/utils/resolveSubType.js';
-import { maintenanceContainer } from '../src/utils/containers.js';
 
-/** @typedef {import('../src/skport/utils/typedef.js').WikiApiResponse} WikiApiResponse */
+/** @typedef {import('../src/types/skport/wiki.js').WikiApiResponse} WikiApiResponse */
 
 const WIKI_TTL = 5 * 60 * 1000; // 5 minutes
 const wikiCache = getOrCreateCache('wiki', WIKI_TTL);

@@ -1,4 +1,4 @@
-import * as Constants from './constants.js';
+import * as Constants from '#/constants/skport.js';
 /** @typedef {import('#/types/skport/utils.js').ConstantValue} ConstantValue */
 /** @typedef {import('#/types/skport/utils.js').ResolvedSubType} ResolvedSubType */
 

@@ -8,10 +8,10 @@ import {
   AttachmentBuilder,
 } from 'discord.js';
 import { errorContainer } from '#/components/index.js';
+import { ProfessionEmojis, PropertyEmojis, RarityEmoji, Rarity2Emoji } from '#/constants/emojis.js';
+import { ElementType, Profession } from '#/constants/skport.js';
 import { Accounts, Events } from '#/db/index.js';
-import { ElementType, Profession } from '#/skport/utils/constants.js';
 import { getCachedCardDetail } from '#/skport/utils/getCachedCardDetail.js';
-import { ProfessionEmojis, PropertyEmojis, RarityEmoji, Rarity2Emoji } from '#/utils/emojis.js';
 import { getMaxLevel, getBreakthroughLevel } from '#/utils/game.js';
 import { generateCharacterBuild } from '#/utils/generateCharacterBuild.js';
 import { BotConfig } from '#/config';

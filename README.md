@@ -5,7 +5,8 @@ A Discord bot for **Arknights: Endfield** with utility commands to enhance your 
 [Features](#features) |
 [Screenshots](#screenshots) |
 [Using the bot](#using-the-bot) |
-[Commands](#commands)
+[Commands](#commands) |
+[Project Structure](#project-structure)
 
 ## Features
 
@@ -110,6 +111,13 @@ The bot is hosted with a centralized database and 24/7 uptime. Get instant updat
 | `/redeem`      | Redeem Endfield codes                    |
 | `/settings`    | View settings (coming soon)              |
 | `/survey`      | Open feedback surveys to improve the bot |
+
+## Project Structure
+
+- `src/` application source, including commands, events, database access, shared utilities, config, and constants
+- `assets/` static images and fonts used by the bot output
+- `drizzle/` generated migration and schema artifacts for database tooling
+- `scratch/` non-runtime prototypes and experiments that should not be auto-loaded as bot commands
 
 ## Contributing
 

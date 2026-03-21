@@ -5,7 +5,7 @@ import logger from '#/logger';
  * @param {object} [options={}]
  * @param {string} [options.serverId='3']
  * @param {string} [options.channelId='6']
- * @param {import('../../../../dictionary/lang.js').Language} [options.lang='en-us']
+ * @param {import('#/constants/languages.js').Language} [options.lang='en-us']
  * @returns {Promise<{ status: -1, msg: string, timestamp: string } | { status: 0, data: Bulletin }>}
  */
 export async function getBulletin({ serverId = '3', channelId = '6', lang = 'en-us' } = {}) {

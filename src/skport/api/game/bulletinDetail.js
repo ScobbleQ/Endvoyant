@@ -5,7 +5,7 @@ import logger from '#/logger';
  *
  * @param {string} bulletinId
  * @param {object} [options={}]
- * @param {import('../../../../dictionary/lang.js').Language} [options.lang='en-us']
+ * @param {import('#/constants/languages.js').Language} [options.lang='en-us']
  * @returns {Promise<{ status: -1, msg: string, timestamp: string } | { status: 0, data: BulletinDetail }>}
  */
 export async function getBulletinDetail(bulletinId, { lang = 'en-us' } = {}) {

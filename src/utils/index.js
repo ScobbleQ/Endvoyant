@@ -1,4 +1,3 @@
-export * from './emojis.js';
 export * from './game.js';
 export * from './generateCharacterBuild.js';
 export * from './parseCookieToken.js';

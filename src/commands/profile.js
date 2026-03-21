@@ -6,9 +6,14 @@ import {
   TextDisplayBuilder,
 } from 'discord.js';
 import { errorContainer, textContainer } from '#/components/index.js';
+import {
+  ProfessionEmojis,
+  ProfileEmojis,
+  PropertyEmojis,
+  RarityEmoji,
+} from '#/constants/emojis.js';
 import { Events, Accounts, Users } from '#/db/index.js';
 import { getCachedCardDetail } from '#/skport/utils/getCachedCardDetail.js';
-import { ProfessionEmojis, ProfileEmojis, PropertyEmojis, RarityEmoji } from '#/utils/emojis.js';
 import { privacy } from '#/utils/privacy.js';
 import { BotConfig } from '#/config';
 
