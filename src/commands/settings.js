@@ -29,7 +29,7 @@ const addModalInteractions = {
 export default {
   data: new SlashCommandBuilder()
     .setName('settings')
-    .setDescription('Settings command')
+    .setDescription('Manage your Endvoyant profile and accounts')
     .setIntegrationTypes([0, 1])
     .setContexts([0, 1, 2]),
   /** @param {import("discord.js").ChatInputCommandInteraction} interaction */
@@ -64,47 +64,65 @@ export default {
 
 /** @param {string} dcid */
 async function buildSettingsContainer(dcid) {
-  const container = new ContainerBuilder();
-  container.addTextDisplayComponents((textDisplay) => textDisplay.setContent('## Settings'));
-  container.addSectionComponents((section) =>
-    section
-      .addTextDisplayComponents((textDisplay) => textDisplay.setContent('### User Preferences'))
-      .setButtonAccessory((button) =>
-        button
-          .setCustomId(createComponentId('settings', 'user'))
-          .setLabel('Edit Preferences')
-          .setStyle(ButtonStyle.Primary)
-      )
-  );
-  container.addTextDisplayComponents((textDisplay) => textDisplay.setContent('### Your Accounts'));
+  const container = new ContainerBuilder()
+    .addSectionComponents((section) =>
+      section
+        .addTextDisplayComponents((textDisplay) =>
+          textDisplay.setContent(
+            ['## ▼// Your Settings', 'Manage your profile and linked SKPort accounts.'].join('\n')
+          )
+        )
+        .setButtonAccessory((button) =>
+          button
+            .setCustomId(createComponentId('settings', 'user'))
+            .setLabel('Edit Profile')
+            .setStyle(ButtonStyle.Primary)
+        )
+    )
+    .addTextDisplayComponents((textDisplay) => textDisplay.setContent('### Linked Accounts'));
 
   const accounts = await Accounts.getByDcid(dcid);
   if (accounts.length > 0) {
     for (const account of accounts) {
+      const primaryBadge = account.isPrimary ? ' - *primary*' : '';
+      const linkedDate = Math.floor(new Date(account.addedOn).getTime() / 1000);
+
       container.addSeparatorComponents((separator) => separator);
       container.addTextDisplayComponents((textDisplay) =>
         textDisplay.setContent(
-          `### ${account.nickname}\nUID: ${account.roleId}\nAdded on ${new Date(account.addedOn).toLocaleDateString()}`
+          [
+            `**${account.nickname}**${primaryBadge}`,
+            `-# UID \`${account.roleId}\``,
+            `-# Linked <t:${linkedDate}:F>`,
+          ].join('\n')
         )
       );
       container.addActionRowComponents((row) =>
         row.addComponents(
           new ButtonBuilder()
+            .setCustomId(createComponentId('settings', 'account', String(account.shortId)))
+            .setLabel('Edit')
+            .setStyle(ButtonStyle.Primary),
+          new ButtonBuilder()
             .setCustomId(createComponentId('settings', 'accountPrimary', String(account.shortId)))
-            .setLabel('Make Primary')
-            .setStyle(ButtonStyle.Success)
+            .setLabel(account.isPrimary ? 'Primary' : 'Set Primary')
+            .setStyle(ButtonStyle.Secondary)
             .setDisabled(account.isPrimary),
           new ButtonBuilder()
-            .setCustomId(createComponentId('settings', 'account', String(account.shortId)))
-            .setLabel('Account Settings')
-            .setStyle(ButtonStyle.Secondary),
-          new ButtonBuilder()
             .setCustomId(createComponentId('settings', 'accountDelete', String(account.shortId)))
-            .setLabel('Delete Account')
+            .setLabel('Remove')
             .setStyle(ButtonStyle.Danger)
         )
       );
     }
+  } else {
+    container.addTextDisplayComponents((textDisplay) =>
+      textDisplay.setContent(
+        ['No accounts linked yet.', 'Use `/add account` to link your first SKPort account.'].join(
+          '\n'
+        )
+      )
+    );
   }
   return container;
 }
@@ -115,14 +133,36 @@ async function handleUserButton(interaction) {
   if (!user) {
     await interaction.reply({
       components: [errorContainer('User not found.')],
-      flags: [MessageFlags.Ephemeral],
+      flags: [MessageFlags.Ephemeral, MessageFlags.IsComponentsV2],
     });
     return;
   }
 
   const modal = new ModalBuilder()
     .setCustomId(createComponentId('settings', 'user'))
-    .setTitle('User Preferences');
+    .setTitle('Edit Profile Settings');
+
+  const privacySelect = new StringSelectMenuBuilder()
+    .setCustomId('privacy')
+    .setPlaceholder('Choose profile visibility')
+    .addOptions(
+      {
+        label: 'Visible',
+        value: 'public',
+        default: user.isPrivate ? false : true,
+      },
+
+      {
+        label: 'Hidden',
+        value: 'private',
+        default: user.isPrivate ? true : false,
+      }
+    );
+
+  const privacyLabel = new LabelBuilder()
+    .setLabel('Profile Visibility')
+    .setDescription('Choose whether other users can view your profile.')
+    .setStringSelectMenuComponent(privacySelect);
 
   const languageSelect = new StringSelectMenuBuilder()
     .setCustomId('language')
@@ -137,20 +177,20 @@ async function handleUserButton(interaction) {
 
   const languageLabel = new LabelBuilder()
     .setLabel('Language')
-    .setDescription('Note: This will only apply to some features.')
+    .setDescription('Used for supported bot responses and UI text.')
     .setStringSelectMenuComponent(languageSelect);
 
   const notifSelect = new StringSelectMenuBuilder()
     .setCustomId('notif')
-    .setPlaceholder('Allow or block')
+    .setPlaceholder('Choose DM notifications')
     .addOptions(
       {
-        label: 'Allow',
+        label: 'Enabled',
         value: 'allow',
         default: user.enableNotif ? true : false,
       },
       {
-        label: 'Block',
+        label: 'Disabled',
         value: 'block',
         default: user.enableNotif ? false : true,
       }
@@ -158,32 +198,10 @@ async function handleUserButton(interaction) {
 
   const notifLabel = new LabelBuilder()
     .setLabel('Notifications')
-    .setDescription('Receive DM notifications from the bot.')
+    .setDescription('Allow Endvoyant to send you direct message notifications.')
     .setStringSelectMenuComponent(notifSelect);
 
-  const privacySelect = new StringSelectMenuBuilder()
-    .setCustomId('privacy')
-    .setPlaceholder('Public or private')
-    .addOptions(
-      {
-        label: 'Public',
-        value: 'public',
-        default: user.isPrivate ? false : true,
-      },
-
-      {
-        label: 'Private',
-        value: 'private',
-        default: user.isPrivate ? true : false,
-      }
-    );
-
-  const privacyLabel = new LabelBuilder()
-    .setLabel('Privacy')
-    .setDescription('Hide your profile from other users.')
-    .setStringSelectMenuComponent(privacySelect);
-
-  modal.addLabelComponents(languageLabel, notifLabel, privacyLabel);
+  modal.addLabelComponents(privacyLabel, languageLabel, notifLabel);
   await interaction.showModal(modal);
 }
 
@@ -196,58 +214,79 @@ async function handleAccountButton(interaction) {
   if (!account) {
     await interaction.reply({
       components: [errorContainer('Account not found.')],
-      flags: [MessageFlags.Ephemeral],
+      flags: [MessageFlags.Ephemeral, MessageFlags.IsComponentsV2],
     });
     return;
   }
 
   const modal = new ModalBuilder()
     .setCustomId(createComponentId('settings', 'account', String(shortId)))
-    .setTitle(`Change ${account.nickname} Settings`);
+    .setTitle(`Edit ${account.nickname}`);
+
+  const privacySelect = new StringSelectMenuBuilder()
+    .setCustomId('privacy')
+    .setPlaceholder('Choose account visibility')
+    .addOptions(
+      {
+        label: 'Visible',
+        value: 'public',
+        default: account.isPrivate ? false : true,
+      },
+      {
+        label: 'Hidden',
+        value: 'private',
+        default: account.isPrivate ? true : false,
+      }
+    );
+
+  const privacyLabel = new LabelBuilder()
+    .setLabel('Account Visibility')
+    .setDescription('Choose whether other users can view this account.')
+    .setStringSelectMenuComponent(privacySelect);
 
   const enableSigninSelect = new StringSelectMenuBuilder()
     .setCustomId('enableSignin')
-    .setPlaceholder('Enable or disable')
+    .setPlaceholder('Choose auto sign-in status')
     .addOptions(
       {
-        label: 'Enable',
+        label: 'Enabled',
         value: 'enable',
         default: account.enableSignin ? true : false,
       },
       {
-        label: 'Disable',
+        label: 'Disabled',
         value: 'disable',
         default: account.enableSignin ? false : true,
       }
     );
 
   const enableSigninLabel = new LabelBuilder()
-    .setLabel('Auto Sign-in')
-    .setDescription('Enable or disable auto sign-in for this account.')
+    .setLabel('Auto Check-in')
+    .setDescription('Automatically check-in daily for this account.')
     .setStringSelectMenuComponent(enableSigninSelect);
 
   const enableRedeemSelect = new StringSelectMenuBuilder()
     .setCustomId('enableRedeem')
-    .setPlaceholder('Enable or disable')
+    .setPlaceholder('Choose auto redeem status')
     .addOptions(
       {
-        label: 'Enable',
+        label: 'Enabled',
         value: 'enable',
         default: account.enableRedeem ? true : false,
       },
       {
-        label: 'Disable',
+        label: 'Disabled',
         value: 'disable',
         default: account.enableRedeem ? false : true,
       }
     );
 
   const enableRedeemLabel = new LabelBuilder()
-    .setLabel('Auto Redeem')
-    .setDescription('Enable or disable auto redeem for this account.')
+    .setLabel('Auto Code Redemption')
+    .setDescription('Automatically redeem available codes for this account.')
     .setStringSelectMenuComponent(enableRedeemSelect);
 
-  modal.addLabelComponents(enableSigninLabel, enableRedeemLabel);
+  modal.addLabelComponents(privacyLabel, enableSigninLabel, enableRedeemLabel);
   await interaction.showModal(modal);
 }
 
@@ -279,21 +318,37 @@ async function handleAccountDeleteButton(interaction) {
     return;
   }
   await Accounts.delete(interaction.user.id, shortId);
-  await interaction.reply({
-    components: [textContainer(`${account.nickname} has been removed.`)],
-    flags: [MessageFlags.Ephemeral, MessageFlags.IsComponentsV2],
-  });
+  const container = await buildSettingsContainer(interaction.user.id);
+  await interaction.update({ components: [container] });
 }
 
 /** @param {import("discord.js").ModalSubmitInteraction} interaction */
 async function handleUserModal(interaction) {
   await interaction.deferUpdate();
+
+  const user = await Users.getByDcid(interaction.user.id);
+  if (!user) {
+    await interaction.followUp({
+      components: [errorContainer('User not found.')],
+      flags: [MessageFlags.Ephemeral, MessageFlags.IsComponentsV2],
+    });
+    return;
+  }
+
   const [language] = interaction.fields.getStringSelectValues('language');
   const [notif] = interaction.fields.getStringSelectValues('notif');
   const [privacy] = interaction.fields.getStringSelectValues('privacy');
 
+  const isPrivate = privacy === 'private';
+  const enableNotif = notif === 'allow';
+  const langValue = Object.hasOwn(lang, language ?? '') ? language : user.lang;
+
+  await Users.update(user.dcid, { key: 'lang', value: langValue });
+  await Users.update(user.dcid, { key: 'enableNotif', value: enableNotif });
+  await Users.update(user.dcid, { key: 'isPrivate', value: isPrivate });
+
   await interaction.followUp({
-    components: [textContainer(`Values updated: ${language}, ${notif}, ${privacy}`)],
+    components: [textContainer('Your profile settings have been updated.')],
     flags: [MessageFlags.Ephemeral, MessageFlags.IsComponentsV2],
   });
 }
@@ -301,11 +356,42 @@ async function handleUserModal(interaction) {
 /** @param {import("discord.js").ModalSubmitInteraction} interaction */
 async function handleAccountModal(interaction) {
   await interaction.deferUpdate();
+
+  const { args } = parseComponentId(interaction.customId) ?? {};
+  const shortId = args?.length ? Number(args[0]) : NaN;
+  const account = await Accounts.getByDcidAndShortId(interaction.user.id, shortId);
+
+  if (!account) {
+    await interaction.followUp({
+      components: [errorContainer('Account not found.')],
+      flags: [MessageFlags.Ephemeral, MessageFlags.IsComponentsV2],
+    });
+    return;
+  }
+
+  const [privacy] = interaction.fields.getStringSelectValues('privacy');
   const [enableSignin] = interaction.fields.getStringSelectValues('enableSignin');
   const [enableRedeem] = interaction.fields.getStringSelectValues('enableRedeem');
 
+  const isPrivate = privacy === 'private';
+  const signinEnabled = enableSignin === 'enable';
+  const redeemEnabled = enableRedeem === 'enable';
+
+  await Accounts.update(interaction.user.id, account.id, {
+    key: 'isPrivate',
+    value: isPrivate,
+  });
+  await Accounts.update(interaction.user.id, account.id, {
+    key: 'enableSignin',
+    value: signinEnabled,
+  });
+  await Accounts.update(interaction.user.id, account.id, {
+    key: 'enableRedeem',
+    value: redeemEnabled,
+  });
+
   await interaction.followUp({
-    components: [textContainer(`Values updated: ${enableSignin}, ${enableRedeem}`)],
+    components: [textContainer(`Updated settings for ${account.nickname}.`)],
     flags: [MessageFlags.Ephemeral, MessageFlags.IsComponentsV2],
   });
 }
