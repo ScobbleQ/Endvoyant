@@ -1,8 +1,6 @@
 /**
  * @template T
- * @typedef {Object} CacheEntry
- * @property {T} data - The cached data
- * @property {number} fetchTime - Timestamp when the data was cached
+ * @typedef {import('#/types/cache.js').CacheEntry<T>} CacheEntry
  */
 
 /**

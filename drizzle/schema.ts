@@ -149,4 +149,5 @@ export const users = pgTable('users', {
   createdAt: timestamp('created_at', { withTimezone: true, mode: 'string' }).defaultNow().notNull(),
   isBanned: boolean('is_banned').default(false).notNull(),
   enableNotif: boolean('enable_notif').default(true).notNull(),
+  lang: text().default('en-us').notNull(),
 });

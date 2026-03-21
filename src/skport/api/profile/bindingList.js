@@ -1,24 +1,6 @@
 import UserAgent from 'user-agents';
 import logger from '#/logger';
-
-/**
- * @typedef {Object} AccountBinding
- * @property {string} appCode
- * @property {string} appName
- * @property {boolean} supportMultiServer
- * @property {AccountBindingList[]} bindingList
- */
-
-/**
- * @typedef {Object} AccountBindingList
- * @property {string} uid
- * @property {string} channelMasterId
- * @property {string} channelName
- * @property {boolean} isDelete
- * @property {boolean} isBanned
- * @property {number} registerTs
- * @property {{ isBind: boolean, serverId: string, serverName: string, roleId: string, nickName: string, level: number, isDefault: boolean, registerTs: number }[]} roles
- */
+/** @typedef {import('#/types/skport/profile.js').AccountBinding} AccountBinding */
 
 /**
  *

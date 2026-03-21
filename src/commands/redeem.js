@@ -1,6 +1,6 @@
 import { MessageFlags, SlashCommandBuilder } from 'discord.js';
 import { errorContainer, textContainer, warningContainer } from '#/components/index.js';
-import { Accounts, Users, Events, EfAttemptedCodes } from '#/db/queries.js';
+import { Accounts, Users, Events, EfAttemptedCodes } from '#/db/index.js';
 import { redeem, tokenByChannelToken, grantOAuth } from '#/skport/api/index.js';
 import { BotConfig } from '#/config';
 
@@ -9,13 +9,20 @@ export default {
     .setName('redeem')
     .setDescription('Redeem codes')
     .addStringOption((option) =>
-      option.setName('code').setDescription('The codes to redeem').setRequired(false)
+      option.setName('code').setDescription('The code to redeem').setRequired(true)
     )
     .setIntegrationTypes([0, 1])
     .setContexts([0, 1, 2]),
   /** @param {import("discord.js").ChatInputCommandInteraction} interaction */
   async execute(interaction) {
-    let code = interaction.options.getString('code') || 'TESTCODE1';
+    const code = interaction.options.getString('code')?.trim();
+    if (!code) {
+      await interaction.reply({
+        components: [errorContainer('Please provide a redeem code.')],
+        flags: [MessageFlags.Ephemeral, MessageFlags.IsComponentsV2],
+      });
+      return;
+    }
 
     const user = await Users.getByDcid(interaction.user.id);
     if (!user) {

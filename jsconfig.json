@@ -1,17 +1,22 @@
 {
   "compilerOptions": {
     "checkJs": true,
+    "skipLibCheck": true,
     "allowJs": true,
+    "strict": true,
+    "noEmit": true,
     "baseUrl": ".",
     "paths": {
       "#/*": ["src/*"],
-      "#/config": ["config.js"],
-      "#/logger": ["src/utils/logger.js"]
+      "#/config": ["src/config/index.js"],
+      "#/logger": ["src/utils/logger.js"],
+      "#/types/*": ["src/types/*"],
+      "user-agents": ["src/types/vendor/user-agents.d.ts"]
     },
     "module": "NodeNext",
     "moduleResolution": "NodeNext",
-    "target": "esnext",
-    "strict": true
+    "target": "esnext"
   },
-  "include": ["src"]
+  "include": ["src/**/*"],
+  "exclude": ["node_modules"]
 }

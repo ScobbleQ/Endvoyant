@@ -6,9 +6,8 @@ import {
   ButtonStyle,
 } from 'discord.js';
 import { errorContainer } from '#/components/index.js';
-import { Events, getAccount, getUser } from '#/db/queries.js';
+import { Events, Users } from '#/db/index.js';
 import { BotConfig } from '#/config';
-import logger from '#/logger';
 
 export default {
   data: new SlashCommandBuilder()
@@ -18,7 +17,7 @@ export default {
     .setContexts([0, 1, 2]),
   /** @param {import("discord.js").ChatInputCommandInteraction} interaction */
   async execute(interaction) {
-    const user = await getUser(interaction.user.id);
+    const user = await Users.getByDcid(interaction.user.id);
     if (!user) {
       await interaction.reply({
         components: [errorContainer('Please add an account with `/add account` to continue.')],
@@ -33,9 +32,6 @@ export default {
         action: 'settings',
       });
     }
-
-    const account = await getAccount(interaction.user.id);
-    logger.debug(account);
 
     const container = new ContainerBuilder();
     container.addTextDisplayComponents((textDisplay) =>

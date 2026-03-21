@@ -5,95 +5,13 @@ import {
   StringSelectMenuBuilder,
 } from 'discord.js';
 import { errorContainer, textContainer } from '#/components/index.js';
-import { Accounts, Events, Users } from '#/db/queries.js';
+import { Accounts, Events, Users } from '#/db/index.js';
 import { getCachedCardDetail } from '#/skport/utils/getCachedCardDetail.js';
+import { createComponentId } from '#/utils/componentId.js';
 import { BotConfig } from '#/config';
 
-/** @param {Array<{ id: string; shortId?: number; isPrimary?: boolean; isPrivate?: boolean }>} accounts @param {number} [shortId] */
-const resolveAccount = (accounts, shortId) =>
-  shortId
-    ? accounts.find((a) => a.shortId === shortId)
-    : (accounts.find((a) => a.isPrimary) ?? accounts[0]);
-
-/** @param {{ status?: number; msg?: string } | null} profile */
-const parseProfileError = (profile) => {
-  try {
-    const parsed = JSON.parse(profile?.msg ?? '{}');
-    return {
-      code: parsed.code ?? profile?.status ?? -1,
-      msg: parsed.message ?? profile?.msg ?? 'Unknown error',
-    };
-  } catch {
-    return { code: profile?.status ?? -1, msg: profile?.msg ?? 'Unknown error' };
-  }
-};
-
-/** @param {string} dcid @param {string} viewerId @param {{ shortId?: number }} account */
-const containerContext = (dcid, viewerId, account) => ({
-  shortId: account.shortId ?? 0,
-  dcid: dcid !== viewerId ? dcid : undefined,
-});
-
-/**
- * @param {import('../skport/api/profile/cardDetail.js').CardDetail['domain']} domains
- * @param {number} domainIndex
- * @param {{ shortId?: number; dcid?: string }} context
- */
-const buildExplorationContainer = (domains, domainIndex, { shortId = 0, dcid } = {}) => {
-  const reversedDomains = (domains ?? []).toReversed();
-  const domain = reversedDomains[domainIndex];
-  if (!domain) {
-    return new ContainerBuilder().addTextDisplayComponents((textDisplay) =>
-      textDisplay.setContent('No exploration data.')
-    );
-  }
-
-  const formatStat = (
-    /** @type {string} */ label,
-    /** @type {{ count: number; total: number }} */ { count, total }
-  ) => `${label}: ${total === 0 ? '-' : `${count} / ${total}`}`;
-
-  const container = new ContainerBuilder().addTextDisplayComponents((textDisplay) =>
-    textDisplay.setContent(`## ${domain.name}`)
-  );
-
-  const levels = (domain.levels ?? []).toReversed();
-  for (const level of levels) {
-    const exploreData = [
-      formatStat('Crate', level.trchestCount),
-      formatStat('Aurylene', level.puzzleCount),
-      formatStat('Protocol Datalogger', level.blackboxCount),
-      formatStat('Repair Logic', level.pieceCount),
-      formatStat('Gear Template Crate', level.equipTrchestCount),
-    ].filter(Boolean);
-
-    container.addTextDisplayComponents((textDisplay) =>
-      textDisplay.setContent(`**${level.name}**\n${exploreData.join('\n')}`)
-    );
-
-    container.addSeparatorComponents((separator) => separator);
-  }
-
-  if (reversedDomains.length > 1) {
-    container.addActionRowComponents((actionRow) =>
-      actionRow.setComponents(
-        new StringSelectMenuBuilder()
-          .setCustomId(
-            dcid ? `exploration-domain-${shortId}-${dcid}` : `exploration-domain-${shortId}`
-          )
-          .setPlaceholder('Switch region')
-          .addOptions(
-            reversedDomains.map((d, i) => ({
-              label: d.name,
-              value: String(i),
-              default: i === domainIndex,
-            }))
-          )
-      )
-    );
-  }
-
-  return container;
+const explorationSelectMenuInteractions = {
+  domain: { ownerOnly: true, execute: handleExplorationDomainSelect },
 };
 
 export default {
@@ -225,42 +143,136 @@ export default {
       flags: [MessageFlags.IsComponentsV2],
     });
   },
-  /** @param {import('discord.js').StringSelectMenuInteraction} interaction @param {...string} args */
-  async selectMenu(interaction, ...args) {
-    const [action, shortIdStr, targetDcid] = args;
-    if (action !== 'domain') return;
-
-    await interaction.deferUpdate();
-
-    const accountShortId = parseInt(shortIdStr ?? '0', 10) || 0;
-    const dcid = targetDcid || interaction.user.id;
-    const accounts = await Accounts.getByDcid(dcid);
-    const account = resolveAccount(accounts ?? [], accountShortId);
-
-    if (!account) {
-      await interaction.editReply({
-        components: [errorContainer('Account not found.')],
-        flags: [MessageFlags.IsComponentsV2],
-      });
-      return;
-    }
-
-    const profile = await getCachedCardDetail(dcid, account.id);
-    if (!profile || profile.status !== 0) {
-      const { code, msg } = parseProfileError(profile);
-      await interaction.editReply({
-        components: [errorContainer(`[${code}] ${msg}`)],
-        flags: [MessageFlags.IsComponentsV2],
-      });
-      return;
-    }
-
-    const domainIndex = parseInt(interaction.values[0] ?? '0', 10);
-    const container = buildExplorationContainer(
-      profile.data.domain,
-      domainIndex,
-      containerContext(dcid, interaction.user.id, account)
-    );
-    await interaction.editReply({ components: [container] });
+  interactions: {
+    selectMenu: explorationSelectMenuInteractions,
   },
+};
+
+/**
+ * @param {import('discord.js').StringSelectMenuInteraction} interaction
+ * @param {string} [shortIdStr]
+ * @param {string} [targetDcid]
+ */
+async function handleExplorationDomainSelect(interaction, shortIdStr, targetDcid) {
+  await interaction.deferUpdate();
+
+  const accountShortId = parseInt(shortIdStr ?? '0', 10) || 0;
+  const dcid = targetDcid || interaction.user.id;
+  const accounts = await Accounts.getByDcid(dcid);
+  const account = resolveAccount(accounts ?? [], accountShortId);
+
+  if (!account) {
+    await interaction.editReply({
+      components: [errorContainer('Account not found.')],
+      flags: [MessageFlags.IsComponentsV2],
+    });
+    return;
+  }
+
+  const profile = await getCachedCardDetail(dcid, account.id);
+  if (!profile || profile.status !== 0) {
+    const { code, msg } = parseProfileError(profile);
+    await interaction.editReply({
+      components: [errorContainer(`[${code}] ${msg}`)],
+      flags: [MessageFlags.IsComponentsV2],
+    });
+    return;
+  }
+
+  const domainIndex = parseInt(interaction.values[0] ?? '0', 10);
+  const container = buildExplorationContainer(
+    profile.data.domain,
+    domainIndex,
+    containerContext(dcid, interaction.user.id, account)
+  );
+  await interaction.editReply({ components: [container] });
+}
+
+/** @param {Array<{ id: string; shortId?: number; isPrimary?: boolean; isPrivate?: boolean }>} accounts @param {number} [shortId] */
+const resolveAccount = (accounts, shortId) =>
+  shortId
+    ? accounts.find((a) => a.shortId === shortId)
+    : (accounts.find((a) => a.isPrimary) ?? accounts[0]);
+
+/** @param {{ status?: number; msg?: string } | null} profile */
+const parseProfileError = (profile) => {
+  try {
+    const parsed = JSON.parse(profile?.msg ?? '{}');
+    return {
+      code: parsed.code ?? profile?.status ?? -1,
+      msg: parsed.message ?? profile?.msg ?? 'Unknown error',
+    };
+  } catch {
+    return { code: profile?.status ?? -1, msg: profile?.msg ?? 'Unknown error' };
+  }
+};
+
+/** @param {string} dcid @param {string} viewerId @param {{ shortId?: number }} account */
+const containerContext = (dcid, viewerId, account) => ({
+  shortId: account.shortId ?? 0,
+  dcid: dcid !== viewerId ? dcid : undefined,
+});
+
+/**
+ * @param {import('#/types/skport/profile.js').CardDetail['domain']} domains
+ * @param {number} domainIndex
+ * @param {{ shortId?: number; dcid?: string }} context
+ */
+const buildExplorationContainer = (domains, domainIndex, { shortId = 0, dcid } = {}) => {
+  const reversedDomains = (domains ?? []).toReversed();
+  const domain = reversedDomains[domainIndex];
+  if (!domain) {
+    return new ContainerBuilder().addTextDisplayComponents((textDisplay) =>
+      textDisplay.setContent('No exploration data.')
+    );
+  }
+
+  const formatStat = (
+    /** @type {string} */ label,
+    /** @type {{ count: number; total: number }} */ { count, total }
+  ) => `${label}: ${total === 0 ? '-' : `${count} / ${total}`}`;
+
+  const container = new ContainerBuilder().addTextDisplayComponents((textDisplay) =>
+    textDisplay.setContent(`## ${domain.name}`)
+  );
+
+  const levels = (domain.levels ?? []).toReversed();
+  for (const level of levels) {
+    const exploreData = [
+      formatStat('Crate', level.trchestCount),
+      formatStat('Aurylene', level.puzzleCount),
+      formatStat('Protocol Datalogger', level.blackboxCount),
+      formatStat('Repair Logic', level.pieceCount),
+      formatStat('Gear Template Crate', level.equipTrchestCount),
+    ].filter(Boolean);
+
+    container.addTextDisplayComponents((textDisplay) =>
+      textDisplay.setContent(`**${level.name}**\n${exploreData.join('\n')}`)
+    );
+
+    container.addSeparatorComponents((separator) => separator);
+  }
+
+  if (reversedDomains.length > 1) {
+    container.addActionRowComponents((actionRow) =>
+      actionRow.setComponents(
+        new StringSelectMenuBuilder()
+          .setCustomId(
+            dcid
+              ? createComponentId('exploration', 'domain', String(shortId), dcid)
+              : createComponentId('exploration', 'domain', String(shortId))
+          )
+          .setPlaceholder('Switch region')
+          .addOptions(
+            reversedDomains.map((d, i) => ({
+              label: d.name,
+              value: String(i),
+              default: i === domainIndex,
+            }))
+          )
+      )
+    );
+  }
+
+  return container;
 };

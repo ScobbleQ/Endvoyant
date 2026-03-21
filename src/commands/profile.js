@@ -6,9 +6,14 @@ import {
   TextDisplayBuilder,
 } from 'discord.js';
 import { errorContainer, textContainer } from '#/components/index.js';
-import { Events, Accounts, Users } from '#/db/queries.js';
+import {
+  getProfessionEmoji,
+  getProfileEmoji,
+  getPropertyEmoji,
+  RarityEmoji,
+} from '#/constants/emojis.js';
+import { Events, Accounts, Users } from '#/db/index.js';
 import { getCachedCardDetail } from '#/skport/utils/getCachedCardDetail.js';
-import { ProfessionEmojis, ProfileEmojis, PropertyEmojis, RarityEmoji } from '#/utils/emojis.js';
 import { privacy } from '#/utils/privacy.js';
 import { BotConfig } from '#/config';
 
@@ -119,8 +124,9 @@ export default {
 
     const profile = await getCachedCardDetail(dcid, account.id);
     if (!profile || profile.status !== 0) {
-      const code = JSON.parse(profile.msg).code || profile.status || -1;
-      const msg = JSON.parse(profile.msg).message || profile.msg || 'Unknown error';
+      const parsed = JSON.parse(profile?.msg ?? '{}');
+      const code = parsed.code || profile?.status || -1;
+      const msg = parsed.message || profile?.msg || 'Unknown error';
       await interaction.editReply({
         components: [errorContainer(`[${code}] ${msg}`)],
         flags: [MessageFlags.IsComponentsV2],
@@ -140,11 +146,10 @@ export default {
         textDisplay.setContent(
           [
             `## ▼// ${profile.data.base.name}`,
-            // expect escape character errors here, its for formatting on Discord
-            `\> Awakening Day: <t:${profile.data.base.createTime}:D>`,
-            `\> UID: ${privacy(profile.data.base.roleId, account.isPrivate)}`,
-            `\> Server: ${profile.data.base.serverName}`,
-            `\> Last Login: <t:${profile.data.base.lastLoginTime}:R>`,
+            `> Awakening Day: <t:${profile.data.base.createTime}:D>`,
+            `> UID: ${privacy(profile.data.base.roleId, account.isPrivate)}`,
+            `> Server: ${profile.data.base.serverName}`,
+            `> Last Login: <t:${profile.data.base.lastLoginTime}:R>`,
           ].join('\n')
         )
       )
@@ -168,7 +173,7 @@ export default {
 
     const realTimeDataTextDisplay = new TextDisplayBuilder().setContent(
       [
-        `### ${ProfileEmojis.RealTimeData} [ Real-Time Data ]`,
+        `### ${getProfileEmoji('RealTimeData')} [ Real-Time Data ]`,
         `Sanity: **${profile.data.dungeon.curStamina}** / ${profile.data.dungeon.maxStamina}`,
         profile.data.dungeon.maxTs !== '0' && `Full Recovery <t:${profile.data.dungeon.maxTs}:R>`,
         `Activity Points: **${profile.data.dailyMission.dailyActivation}** / ${profile.data.dailyMission.maxDailyActivation}`,
@@ -189,12 +194,12 @@ export default {
 
     profileContainer.addTextDisplayComponents((textDisplay) =>
       textDisplay.setContent(
-        `### ${ProfileEmojis.RegionalDevelopment} [ Regional Development ]\n${domains}`
+        `### ${getProfileEmoji('RegionalDevelopment')} [ Regional Development ]\n${domains}`
       )
     );
 
     profileContainer.addTextDisplayComponents((textDisplay) =>
-      textDisplay.setContent(`### ${ProfileEmojis.Operator} [ Operators ]`)
+      textDisplay.setContent(`### ${getProfileEmoji('Operator')} [ Operators ]`)
     );
 
     for (const operator of profile.data.chars.slice(0, 3)) {
@@ -203,7 +208,7 @@ export default {
           .addTextDisplayComponents((textDisplay) =>
             textDisplay.setContent(
               [
-                `**${operator.charData.name}** ${ProfessionEmojis[/** @type {keyof typeof ProfessionEmojis} */ (operator.charData.profession.value)]} ${PropertyEmojis[/** @type {keyof typeof PropertyEmojis} */ (operator.charData.property.value)]}`,
+                `**${operator.charData.name}** ${getProfessionEmoji(operator.charData.profession.value)} ${getPropertyEmoji(operator.charData.property.value)}`,
                 `${RarityEmoji}`.repeat(Number(operator.charData.rarity.value)),
                 `Recruited <t:${operator.ownTs}:d> at <t:${operator.ownTs}:t>`,
                 `Level: ${operator.level}`,

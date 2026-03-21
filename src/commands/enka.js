@@ -1,6 +1,6 @@
 import { MessageFlags, SlashCommandBuilder } from 'discord.js';
 import { errorContainer, warningContainer } from '#/components/index.js';
-import { Events, getAccount, getUser } from '#/db/queries.js';
+import { Events, Accounts, Users } from '#/db/index.js';
 import { BotConfig } from '#/config';
 
 export default {
@@ -16,7 +16,7 @@ export default {
   async execute(interaction) {
     let uid = interaction.options.getString('uid') || null;
 
-    const user = await getUser(interaction.user.id);
+    const user = await Users.getByDcid(interaction.user.id);
     if (!user && !uid) {
       await interaction.reply({
         components: [errorContainer('Please add an account with `/add account` to continue.')],
@@ -26,7 +26,7 @@ export default {
     }
 
     if (!uid) {
-      const account = await getAccount(interaction.user.id);
+      const [account] = await Accounts.getByDcid(interaction.user.id);
       if (!account) {
         await interaction.reply({
           components: [errorContainer('Please add an account with `/add account` to continue.')],

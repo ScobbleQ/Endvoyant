@@ -1,27 +1,8 @@
 import UserAgent from 'user-agents';
 import { computeSign } from '#/skport/utils/computeSign.js';
 import logger from '#/logger';
-
-/**
- * @typedef {Object} AttendanceResponse
- * @property {string} ts
- * @property {AwardIds[]} awardIds
- * @property {Object<string, ResourceItem>} resourceInfoMap
- */
-
-/**
- * @typedef {Object} AwardIds
- * @property {string} id
- * @property {string} type
- */
-
-/**
- * @typedef {Object} ResourceItem
- * @property {string} id
- * @property {number} count
- * @property {string} name
- * @property {string} icon
- */
+/** @typedef {import('#/types/skport/profile.js').AwardIds} AwardIds */
+/** @typedef {import('#/types/skport/profile.js').ResourceItem} ResourceItem */
 
 /**
  * Submit attendance to the API

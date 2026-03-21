@@ -1,4 +1,4 @@
-/** @typedef {import('../../utils/typedef.js').WikiApiResponse} WikiApiResponse */
+/** @typedef {import('#/types/skport/wiki.js').WikiApiResponse} WikiApiResponse */
 
 /**
  * Get all operators from the API

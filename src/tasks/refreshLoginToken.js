@@ -1,5 +1,5 @@
 import pLimit from 'p-limit';
-import { getAccount, getAllUsers, getUser, updateAccount } from '#/db/queries.js';
+import { Accounts, Users } from '#/db/index.js';
 import { accountToken, generateCredByCode, grantOAuth } from '#/skport/api/index.js';
 import logger from '#/logger';
 
@@ -12,28 +12,45 @@ export async function refreshLoginToken() {
   await new Promise((resolve) => setTimeout(resolve, delay));
 
   logger.info('[Cron:RefreshLoginToken] Refreshing login tokens for all users');
-  const users = await getAllUsers();
-  const limit = pLimit(10);
+  const users = await Users.getAll();
 
-  const task = users.map((u) =>
-    limit(async () => {
+  const userLimit = pLimit(10);
+  const userTask = users.map((u) =>
+    userLimit(async () => {
       try {
-        const user = await getUser(u.dcid);
+        const user = await Users.getByDcid(u.dcid);
         if (!user) return;
 
-        const skport = await getAccount(u.dcid);
-        if (!skport) return;
+        const accounts = await Accounts.getByDcid(u.dcid);
+        if (!accounts || accounts.length === 0) return;
 
-        const oauth = await grantOAuth({ token: skport.accountToken, appCode: '6eb76d4e13aa36e6' });
-        if (!oauth || oauth.status !== 0) return;
+        const accountLimit = pLimit(5);
+        const accountTasks = accounts.map((a) =>
+          accountLimit(async () => {
+            try {
+              const oauth = await grantOAuth({
+                token: a.accountToken,
+                appCode: '6eb76d4e13aa36e6',
+              });
+              if (!oauth || oauth.status !== 0) return;
 
-        const cred = await generateCredByCode({ code: oauth.data.code });
-        if (!cred || cred.status !== 0) return;
+              const cred = await generateCredByCode({ code: oauth.data.code });
+              if (!cred || cred.status !== 0) return;
 
-        const token = await accountToken(skport.accountToken, cred.data.token, skport.hgId);
-        if (token.status !== 0) return;
+              const token = await accountToken(a.accountToken, cred.data.token, a.hgId);
+              if (token.status !== 0) return;
 
-        await updateAccount(u.dcid, skport.id, { key: 'accountToken', value: token.data });
+              await Accounts.update(u.dcid, a.id, { key: 'accountToken', value: token.data });
+            } catch (error) {
+              logger.error(
+                error,
+                `[Cron:RefreshLoginToken] Error refreshing login token for account ${a.id}`
+              );
+            }
+          })
+        );
+
+        await Promise.allSettled(accountTasks);
       } catch (error) {
         logger.error(
           error,
@@ -43,7 +60,7 @@ export async function refreshLoginToken() {
     })
   );
 
-  await Promise.allSettled(task).then(() => {
+  await Promise.allSettled(userTask).then(() => {
     logger.info('[Cron:RefreshLoginToken] Login tokens refreshed');
   });
 }

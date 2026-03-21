@@ -1,4 +1,4 @@
-import { and, asc, desc, eq, sql } from 'drizzle-orm';
+import { and, asc, desc, eq, sql, count } from 'drizzle-orm';
 import { db } from './index.js';
 import { accounts, users } from './schema.js';
 
@@ -46,6 +46,13 @@ export class Accounts {
     return await db.query.accounts.findFirst({
       where: and(eq(accounts.dcid, dcid), eq(accounts.isPrimary, true)),
     });
+  }
+  static async getAll() {
+    return await db.query.accounts.findMany({ columns: { dcid: true } });
+  }
+  static async count() {
+    const [row] = await db.select({ count: count() }).from(accounts);
+    return Number(row?.count ?? 0);
   }
   /**
    * Update an account

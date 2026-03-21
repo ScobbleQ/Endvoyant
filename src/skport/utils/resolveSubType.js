@@ -1,4 +1,6 @@
-import * as Constants from './constants.js';
+import * as Constants from '#/constants/skport.js';
+/** @typedef {import('#/types/skport/utils.js').ConstantValue} ConstantValue */
+/** @typedef {import('#/types/skport/utils.js').ResolvedSubType} ResolvedSubType */
 
 // prettier-ignore
 export const TagTree = Object.freeze({
@@ -11,21 +13,6 @@ export const TagTree = Object.freeze({
 });
 
 /**
- * @typedef {Object} ConstantValue
- * @property {string} id
- * @property {string} name
- * @property {string} [value]
- */
-
-/**
- * @typedef {Object} ResolvedSubType
- * @property {string} category - The category name (e.g., 'rarity', 'elementType')
- * @property {string} id
- * @property {string} name
- * @property {string} [value]
- */
-
-/**
  * Resolves a single stat from subTypeId and value
  * @param {string} subTypeId - The subTypeId from API (e.g., '10000' for Rarity)
  * @param {string} value - The value from API (e.g., '10006' for 6*)
@@ -35,15 +22,14 @@ export const TagTree = Object.freeze({
  * resolveSubType('10100', '10105') // Returns { category: 'elementType', id: '10105', name: 'Physical', value: 'char_property_physical' }
  */
 export function resolveSubType(subTypeId, value) {
-  const category = TagTree[/** @type {keyof typeof TagTree} */ (subTypeId)];
+  const category = Object.entries(TagTree).find(([id]) => id === subTypeId)?.[1];
   if (!category) return null;
 
-  const constantValue = category[/** @type {keyof typeof category} */ (value)];
-  if (!constantValue) return null;
+  const constant = Object.entries(category).find(([id]) => id === value)?.[1];
+  if (!constant) return null;
 
   // Map subTypeId to category name
   // prettier-ignore
-  /** @type {Record<string, string>} */
   const categoryMap = {
     "10000": 'rarity',
     "10100": 'elementType',
@@ -53,8 +39,8 @@ export function resolveSubType(subTypeId, value) {
     "10207": 'weaponType',
   };
 
-  /** @type {ConstantValue} */
-  const constant = constantValue;
+  const categoryName =
+    Object.entries(categoryMap).find(([id]) => id === subTypeId)?.[1] ?? subTypeId;
 
-  return Object.assign({ category: categoryMap[subTypeId] || subTypeId }, constant);
+  return Object.assign({ category: categoryName }, constant);
 }

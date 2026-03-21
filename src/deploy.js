@@ -1,6 +1,6 @@
-import { readdirSync } from 'node:fs';
 import { join } from 'node:path';
 import { REST, Routes } from 'discord.js';
+import { walkJavaScriptFiles } from '#/utils/walkJavaScriptFiles.js';
 import { BotConfig } from '#/config';
 import logger from '#/logger';
 
@@ -8,10 +8,9 @@ import logger from '#/logger';
 const commands = [];
 
 const folderPath = join(import.meta.dirname, 'commands');
-const commandFolders = readdirSync(folderPath).filter((file) => file.endsWith('.js'));
+const commandFiles = walkJavaScriptFiles(folderPath);
 
-for (const file of commandFolders) {
-  const filePath = join(folderPath, file);
+for (const filePath of commandFiles) {
   const command = await import(filePath);
 
   if (command.default && 'data' in command.default && 'execute' in command.default) {

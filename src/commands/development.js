@@ -5,105 +5,13 @@ import {
   StringSelectMenuBuilder,
 } from 'discord.js';
 import { errorContainer, textContainer } from '#/components/index.js';
-import { Events, Accounts, Users } from '#/db/queries.js';
+import { Events, Accounts, Users } from '#/db/index.js';
 import { getCachedCardDetail } from '#/skport/utils/getCachedCardDetail.js';
+import { createComponentId } from '#/utils/componentId.js';
 import { BotConfig } from '#/config';
 
-/** @param {Array<{ id: string; shortId?: number; isPrimary?: boolean; isPrivate?: boolean }>} accounts @param {number} [shortId] */
-const resolveAccount = (accounts, shortId) =>
-  shortId
-    ? accounts.find((a) => a.shortId === shortId)
-    : (accounts.find((a) => a.isPrimary) ?? accounts[0]);
-
-/** @param {{ status?: number; msg?: string } | null} profile */
-const parseProfileError = (profile) => {
-  try {
-    const parsed = JSON.parse(profile?.msg ?? '{}');
-    return {
-      code: parsed.code ?? profile?.status ?? -1,
-      msg: parsed.message ?? profile?.msg ?? 'Unknown error',
-    };
-  } catch {
-    return { code: profile?.status ?? -1, msg: profile?.msg ?? 'Unknown error' };
-  }
-};
-
-/** @param {string} dcid @param {string} viewerId @param {{ shortId?: number }} account */
-const containerContext = (dcid, viewerId, account) => ({
-  shortId: account.shortId ?? 0,
-  dcid: dcid !== viewerId ? dcid : undefined,
-});
-
-/**
- * @param {import('../skport/api/profile/cardDetail.js').CardDetail['domain']} domains
- * @param {number} domainIndex
- * @param {{ shortId?: number; dcid?: string }} context
- */
-const buildDevelopmentContainer = (domains, domainIndex, { shortId = 0, dcid } = {}) => {
-  const reversedDomains = (domains ?? []).toReversed();
-  const domain = reversedDomains[domainIndex];
-  if (!domain) {
-    return new ContainerBuilder().addTextDisplayComponents((textDisplay) =>
-      textDisplay.setContent('No development data.')
-    );
-  }
-
-  const container = new ContainerBuilder().addTextDisplayComponents((textDisplay) => {
-    const moneyMgr = domain.moneyMgr ?? { total: '0', count: '0' };
-    const totalFormatted = Number(moneyMgr.total).toLocaleString();
-    const countFormatted = Number(moneyMgr.count).toLocaleString();
-    return textDisplay.setContent(
-      `## ${domain.name}\nRegion Lv. **${domain.level}**\nFunds **${countFormatted}** / **${totalFormatted}**`
-    );
-  });
-
-  for (const settlement of domain.settlements ?? []) {
-    const remainFormatted = Number(settlement.remainMoney ?? 0).toLocaleString();
-    const maxFormatted = Number(settlement.moneyMax ?? 0).toLocaleString();
-    const expToLevelUp = Number(settlement.expToLevelUp ?? 0);
-    const expLine =
-      expToLevelUp > 0
-        ? `Exp **${Number(settlement.exp ?? 0).toLocaleString()}** / **${expToLevelUp.toLocaleString()}**`
-        : `Exp **${Number(settlement.exp ?? 0).toLocaleString()}** (max)`;
-    const lastTick = settlement.lastTickTime ? `<t:${settlement.lastTickTime}:R>` : '-';
-    const lines = [
-      `**${settlement.name}**`,
-      `Lv. **${settlement.level}** · ${expLine}`,
-      `Funds **${remainFormatted}** / **${maxFormatted}**`,
-      `Last tick ${lastTick}`,
-    ];
-
-    container.addSectionComponents((section) =>
-      section
-        .addTextDisplayComponents((textDisplay) => textDisplay.setContent(lines.join('\n')))
-        .setThumbnailAccessory((thumbnail) =>
-          thumbnail.setURL(settlement.officerCharAvatar || 'https://placehold.co/96x96?text=?')
-        )
-    );
-
-    container.addSeparatorComponents((separator) => separator);
-  }
-
-  if (reversedDomains.length > 1) {
-    container.addActionRowComponents((actionRow) =>
-      actionRow.setComponents(
-        new StringSelectMenuBuilder()
-          .setCustomId(
-            dcid ? `development-domain-${shortId}-${dcid}` : `development-domain-${shortId}`
-          )
-          .setPlaceholder('Switch region')
-          .addOptions(
-            reversedDomains.map((d, i) => ({
-              label: d.name,
-              value: String(i),
-              default: i === domainIndex,
-            }))
-          )
-      )
-    );
-  }
-
-  return container;
+const developmentSelectMenuInteractions = {
+  domain: { ownerOnly: true, execute: handleDevelopmentDomainSelect },
 };
 
 export default {
@@ -235,42 +143,146 @@ export default {
       flags: [MessageFlags.IsComponentsV2],
     });
   },
-  /** @param {import('discord.js').StringSelectMenuInteraction} interaction @param {...string} args */
-  async selectMenu(interaction, ...args) {
-    const [action, shortIdStr, targetDcid] = args;
-    if (action !== 'domain') return;
-
-    await interaction.deferUpdate();
-
-    const accountShortId = parseInt(shortIdStr ?? '0', 10) || 0;
-    const dcid = targetDcid || interaction.user.id;
-    const accounts = await Accounts.getByDcid(dcid);
-    const account = resolveAccount(accounts ?? [], accountShortId);
-
-    if (!account) {
-      await interaction.editReply({
-        components: [errorContainer('Account not found.')],
-        flags: [MessageFlags.IsComponentsV2],
-      });
-      return;
-    }
-
-    const profile = await getCachedCardDetail(dcid, account.id);
-    if (!profile || profile.status !== 0) {
-      const { code, msg } = parseProfileError(profile);
-      await interaction.editReply({
-        components: [errorContainer(`[${code}] ${msg}`)],
-        flags: [MessageFlags.IsComponentsV2],
-      });
-      return;
-    }
-
-    const domainIndex = parseInt(interaction.values[0] ?? '0', 10);
-    const container = buildDevelopmentContainer(
-      profile.data.domain,
-      domainIndex,
-      containerContext(dcid, interaction.user.id, account)
-    );
-    await interaction.editReply({ components: [container] });
+  interactions: {
+    selectMenu: developmentSelectMenuInteractions,
   },
+};
+
+/**
+ * @param {import('discord.js').StringSelectMenuInteraction} interaction
+ * @param {string} [shortIdStr]
+ * @param {string} [targetDcid]
+ */
+async function handleDevelopmentDomainSelect(interaction, shortIdStr, targetDcid) {
+  await interaction.deferUpdate();
+
+  const accountShortId = parseInt(shortIdStr ?? '0', 10) || 0;
+  const dcid = targetDcid || interaction.user.id;
+  const accounts = await Accounts.getByDcid(dcid);
+  const account = resolveAccount(accounts ?? [], accountShortId);
+
+  if (!account) {
+    await interaction.editReply({
+      components: [errorContainer('Account not found.')],
+      flags: [MessageFlags.IsComponentsV2],
+    });
+    return;
+  }
+
+  const profile = await getCachedCardDetail(dcid, account.id);
+  if (!profile || profile.status !== 0) {
+    const { code, msg } = parseProfileError(profile);
+    await interaction.editReply({
+      components: [errorContainer(`[${code}] ${msg}`)],
+      flags: [MessageFlags.IsComponentsV2],
+    });
+    return;
+  }
+
+  const domainIndex = parseInt(interaction.values[0] ?? '0', 10);
+  const container = buildDevelopmentContainer(
+    profile.data.domain,
+    domainIndex,
+    containerContext(dcid, interaction.user.id, account)
+  );
+  await interaction.editReply({ components: [container] });
+}
+
+/** @param {Array<{ id: string; shortId?: number; isPrimary?: boolean; isPrivate?: boolean }>} accounts @param {number} [shortId] */
+const resolveAccount = (accounts, shortId) =>
+  shortId
+    ? accounts.find((a) => a.shortId === shortId)
+    : (accounts.find((a) => a.isPrimary) ?? accounts[0]);
+
+/** @param {{ status?: number; msg?: string } | null} profile */
+const parseProfileError = (profile) => {
+  try {
+    const parsed = JSON.parse(profile?.msg ?? '{}');
+    return {
+      code: parsed.code ?? profile?.status ?? -1,
+      msg: parsed.message ?? profile?.msg ?? 'Unknown error',
+    };
+  } catch {
+    return { code: profile?.status ?? -1, msg: profile?.msg ?? 'Unknown error' };
+  }
+};
+
+/** @param {string} dcid @param {string} viewerId @param {{ shortId?: number }} account */
+const containerContext = (dcid, viewerId, account) => ({
+  shortId: account.shortId ?? 0,
+  dcid: dcid !== viewerId ? dcid : undefined,
+});
+
+/**
+ * @param {import('#/types/skport/profile.js').CardDetail['domain']} domains
+ * @param {number} domainIndex
+ * @param {{ shortId?: number; dcid?: string }} context
+ */
+const buildDevelopmentContainer = (domains, domainIndex, { shortId = 0, dcid } = {}) => {
+  const reversedDomains = (domains ?? []).toReversed();
+  const domain = reversedDomains[domainIndex];
+  if (!domain) {
+    return new ContainerBuilder().addTextDisplayComponents((textDisplay) =>
+      textDisplay.setContent('No development data.')
+    );
+  }
+
+  const container = new ContainerBuilder().addTextDisplayComponents((textDisplay) => {
+    const moneyMgr = domain.moneyMgr ?? { total: '0', count: '0' };
+    const totalFormatted = Number(moneyMgr.total).toLocaleString();
+    const countFormatted = Number(moneyMgr.count).toLocaleString();
+    return textDisplay.setContent(
+      `## ${domain.name}\nRegion Lv. **${domain.level}**\nFunds **${countFormatted}** / **${totalFormatted}**`
+    );
+  });
+
+  for (const settlement of domain.settlements ?? []) {
+    const remainFormatted = Number(settlement.remainMoney ?? 0).toLocaleString();
+    const maxFormatted = Number(settlement.moneyMax ?? 0).toLocaleString();
+    const expToLevelUp = Number(settlement.expToLevelUp ?? 0);
+    const expLine =
+      expToLevelUp > 0
+        ? `Exp **${Number(settlement.exp ?? 0).toLocaleString()}** / **${expToLevelUp.toLocaleString()}**`
+        : `Exp **${Number(settlement.exp ?? 0).toLocaleString()}** (max)`;
+    const lastTick = settlement.lastTickTime ? `<t:${settlement.lastTickTime}:R>` : '-';
+    const lines = [
+      `**${settlement.name}**`,
+      `Lv. **${settlement.level}** · ${expLine}`,
+      `Funds **${remainFormatted}** / **${maxFormatted}**`,
+      `Last tick ${lastTick}`,
+    ];
+
+    container.addSectionComponents((section) =>
+      section
+        .addTextDisplayComponents((textDisplay) => textDisplay.setContent(lines.join('\n')))
+        .setThumbnailAccessory((thumbnail) =>
+          thumbnail.setURL(settlement.officerCharAvatar || 'https://placehold.co/96x96?text=?')
+        )
+    );
+
+    container.addSeparatorComponents((separator) => separator);
+  }
+
+  if (reversedDomains.length > 1) {
+    container.addActionRowComponents((actionRow) =>
+      actionRow.setComponents(
+        new StringSelectMenuBuilder()
+          .setCustomId(
+            dcid
+              ? createComponentId('development', 'domain', String(shortId), dcid)
+              : createComponentId('development', 'domain', String(shortId))
+          )
+          .setPlaceholder('Switch region')
+          .addOptions(
+            reversedDomains.map((d, i) => ({
+              label: d.name,
+              value: String(i),
+              default: i === domainIndex,
+            }))
+          )
+      )
+    );
+  }
+
+  return container;
 };

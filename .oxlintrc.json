@@ -1,6 +1,6 @@
 {
   "$schema": "./node_modules/oxlint/configuration_schema.json",
-  "ignorePatterns": ["drizzle", "src/db/schema.js", "src/db/relations.js"],
+  "ignorePatterns": ["drizzle", "src/db/schema.js", "src/db/relations.js", "temp"],
   "plugins": ["unicorn"],
   "categories": {
     "correctness": "off"

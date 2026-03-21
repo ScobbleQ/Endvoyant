@@ -1,10 +1,10 @@
 import { AttachmentBuilder } from 'discord.js';
 import { createCanvas, loadImage } from '@napi-rs/canvas';
 
-/** @typedef {import('../skport/api/profile/cardDetail.js').Characters} Characters */
-/** @typedef {import('../skport/api/profile/cardDetail.js').Weapon} Weapon */
-/** @typedef {import('../skport/api/profile/cardDetail.js').UserSkillData} UserSkillData */
-/** @typedef {import('../skport/api/profile/cardDetail.js').SkillData} SkillData */
+/** @typedef {import('#/types/skport/profile.js').Characters} Characters */
+/** @typedef {import('#/types/skport/profile.js').Weapon} Weapon */
+/** @typedef {import('#/types/skport/profile.js').UserSkillData} UserSkillData */
+/** @typedef {import('#/types/skport/profile.js').SkillData} SkillData */
 /** @typedef {import('@napi-rs/canvas').SKRSContext2D} SKRSContext2D */
 
 // --- Assets & layout ---
