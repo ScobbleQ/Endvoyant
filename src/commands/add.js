@@ -163,13 +163,8 @@ async function handleAddModalSubmission(interaction, getLoginData) {
   await interaction.deferUpdate();
 
   const loginData = await getLoginData(interaction);
-  if (!loginData) {
-    await interaction.editReply({
-      components: [errorContainer('Failed to get login data')],
-      flags: [MessageFlags.IsComponentsV2],
-    });
-    return;
-  }
+  // No need to edit since its handled inside function
+  if (!loginData) return;
 
   await interaction.editReply({
     components: [textContainer('Attempting to grant credentials...')],
