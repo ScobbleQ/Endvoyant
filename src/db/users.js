@@ -1,10 +1,14 @@
-import { eq } from 'drizzle-orm';
+import { eq, count } from 'drizzle-orm';
 import { db } from './index.js';
 import { users } from './schema.js';
 
 export class Users {
   static async getAll() {
     return await db.select({ dcid: users.dcid }).from(users);
+  }
+  static async count() {
+    const [row] = await db.select({ count: count() }).from(users);
+    return Number(row?.count ?? 0);
   }
   /**
    * Create a new user
