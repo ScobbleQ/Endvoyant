@@ -4,13 +4,9 @@ import { Client, Collection, GatewayIntentBits } from 'discord.js';
 import { BotConfig } from '#/config';
 import logger from '#/logger';
 
-const client =
-  /** @type {Client & { commands: Collection<string, any>, cooldowns: Collection<string, any> }} */
-  (
-    new Client({
-      intents: [GatewayIntentBits.Guilds],
-    })
-  );
+const client = new Client({
+  intents: [GatewayIntentBits.Guilds],
+});
 
 client.commands = new Collection();
 client.cooldowns = new Collection();

@@ -261,7 +261,7 @@ export default {
     const search = focusedOption.value.toLowerCase();
 
     const filtered = events.data
-      .filter((/** @type {CachedBulletinEvent} */ e) => {
+      .filter((e) => {
         const header = e.header;
         return header && header.toLowerCase().includes(search);
       })

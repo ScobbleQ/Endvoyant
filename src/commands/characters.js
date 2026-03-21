@@ -8,7 +8,12 @@ import {
   AttachmentBuilder,
 } from 'discord.js';
 import { errorContainer } from '#/components/index.js';
-import { ProfessionEmojis, PropertyEmojis, RarityEmoji, Rarity2Emoji } from '#/constants/emojis.js';
+import {
+  getProfessionEmoji,
+  getPropertyEmoji,
+  RarityEmoji,
+  Rarity2Emoji,
+} from '#/constants/emojis.js';
 import { ElementType, Profession } from '#/constants/skport.js';
 import { Accounts, Events } from '#/db/index.js';
 import { getCachedCardDetail } from '#/skport/utils/getCachedCardDetail.js';
@@ -88,11 +93,10 @@ const getCharacters = async (dcid, aid) => {
 };
 
 /**
- * @param {string} stateStr - Format: page:profession:element:rarity[:shortId]
- * @returns {{ page: number, profession: string, element: string, rarity: string, shortId: number }}
+ * @param {Array<{ id: string, shortId: number, isPrimary: boolean }>} accounts
+ * @param {string | null} targetShortId
  */
-/** @param {Array<{ id: string, shortId: number, isPrimary: boolean }>} accounts */
-const resolveAccount = (accounts, /** @type {string | null} */ targetShortId) =>
+const resolveAccount = (accounts, targetShortId) =>
   targetShortId
     ? accounts.find((a) => String(a.shortId) === targetShortId)
     : (accounts.find((a) => a.isPrimary) ?? accounts[0]);
@@ -218,7 +222,7 @@ const buildCatalogContainer = (chars, { page, profession, element, rarity, short
             emoji: '<:chevronalldirections:1482936485719310482>',
           },
           ...Object.values(Profession).map((p) => ({
-            emoji: ProfessionEmojis[/** @type {keyof typeof ProfessionEmojis} */ (p.name)],
+            emoji: getProfessionEmoji(p.name),
             label: p.name,
             value: p.value,
             default: p.value === profession,
@@ -239,7 +243,7 @@ const buildCatalogContainer = (chars, { page, profession, element, rarity, short
             emoji: '<:chevronalldirections:1482936485719310482>',
           },
           ...Object.values(ElementType).map((e) => ({
-            emoji: PropertyEmojis[/** @type {keyof typeof PropertyEmojis} */ (e.name)],
+            emoji: getPropertyEmoji(e.name),
             label: e.name,
             value: e.value,
             default: e.value === element,
@@ -271,7 +275,7 @@ const buildCatalogContainer = (chars, { page, profession, element, rarity, short
           .addTextDisplayComponents((textDisplay) =>
             textDisplay.setContent(
               [
-                `**${op.charData.name}** ${ProfessionEmojis[/** @type {keyof typeof ProfessionEmojis} */ (profName)]} ${PropertyEmojis[/** @type {keyof typeof PropertyEmojis} */ (propName)]}`,
+                `**${op.charData.name}** ${getProfessionEmoji(profName)} ${getPropertyEmoji(propName)}`,
                 `${RarityEmoji}`.repeat(Number(op.charData.rarity?.value ?? 0)),
                 `Level ${op.level} · Recruited <t:${op.ownTs}:d>`,
               ].join('\n')
@@ -344,7 +348,7 @@ const buildCharacterContainer = (character, catalogStateStr) => {
         textDisplay.setContent(
           [
             `## ${charData.name}`,
-            `${ProfessionEmojis[/** @type {keyof typeof ProfessionEmojis} */ (profName)]}${PropertyEmojis[/** @type {keyof typeof PropertyEmojis} */ (propName)]} | ` +
+            `${getProfessionEmoji(profName)}${getPropertyEmoji(propName)} | ` +
               Rarity2Emoji.repeat(Number(charData.rarity.value || 0)),
             `Level **${level}**/${getMaxLevel(evolvePhase)} · Potential **${potentialLevel}**`,
             `Recruited <t:${ownTs}:D> at <t:${ownTs}:t>`,
@@ -595,7 +599,7 @@ export default {
     const { action, payload } = parseButtonArgs(args);
     await interaction.deferUpdate();
 
-    const resolveAidFromShortId = async (/** @type {number} */ shortId) => {
+    const resolveAidFromShortId = async (shortId = 0) => {
       if (!shortId) return undefined;
       const account = await Accounts.getByDcidAndShortId(interaction.user.id, shortId);
       return account?.id;

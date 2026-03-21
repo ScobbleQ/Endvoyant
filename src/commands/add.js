@@ -128,52 +128,12 @@ export default {
   async modal(interaction) {
     await interaction.deferUpdate();
     const customId = interaction.customId.split('-')[1];
-
-    /** @type {{ token: string, hgId: string } | null} */
-    let loginData = null;
-
-    if (customId === 'login') {
-      const email = interaction.fields.getTextInputValue('email');
-      const password = interaction.fields.getTextInputValue('password');
-
-      await interaction.editReply({
-        components: [textContainer('Attempting to login...')],
-        flags: [MessageFlags.IsComponentsV2],
-      });
-
-      const login = await tokenByEmailPassword(email, password);
-      if (login.status !== 0) {
-        await interaction.editReply({
-          components: [errorContainer(login.msg)],
-          flags: [MessageFlags.IsComponentsV2],
-        });
-        return;
-      }
-
-      loginData = { token: login.data.token, hgId: login.data.hgId };
-    } else if (customId === 'token') {
-      const cookieToken = interaction.fields.getTextInputValue('token');
-
-      await interaction.editReply({
-        components: [textContainer('Attempting to parse cookie token...')],
-        flags: [MessageFlags.IsComponentsV2],
-      });
-
-      const parsed = parseCookieToken(cookieToken);
-      if (!parsed) {
-        await interaction.editReply({
-          components: [
-            errorContainer(
-              'Failed to parse cookie. Ensure it contains ACCOUNT_TOKEN, SK_OAUTH_CRED_KEY, and HG_INFO_KEY (with hgId).'
-            ),
-          ],
-          flags: [MessageFlags.IsComponentsV2],
-        });
-        return;
-      }
-
-      loginData = { token: parsed.token, hgId: parsed.hgId };
-    }
+    const loginData =
+      customId === 'login'
+        ? await getLoginDataFromCredentials(interaction)
+        : customId === 'token'
+          ? await getLoginDataFromCookie(interaction)
+          : null;
 
     if (!loginData) {
       await interaction.editReply({
@@ -324,10 +284,11 @@ export default {
         });
 
         await message.pin();
-      } catch (/** @type {any} */ error) {
+      } catch (error) {
+        const message = error instanceof Error ? error.message : 'Unknown error';
         await interaction.followUp({
           components: [
-            textContainer(`Please ensure the bot has permissions to DM you.\n${error.message}`),
+            textContainer(`Please ensure the bot has permissions to DM you.\n${message}`),
           ],
           flags: [MessageFlags.Ephemeral, MessageFlags.IsComponentsV2],
         });
@@ -335,3 +296,50 @@ export default {
     }
   },
 };
+
+/** @param {import("discord.js").ModalSubmitInteraction} interaction */
+async function getLoginDataFromCredentials(interaction) {
+  const email = interaction.fields.getTextInputValue('email');
+  const password = interaction.fields.getTextInputValue('password');
+
+  await interaction.editReply({
+    components: [textContainer('Attempting to login...')],
+    flags: [MessageFlags.IsComponentsV2],
+  });
+
+  const login = await tokenByEmailPassword(email, password);
+  if (login.status !== 0) {
+    await interaction.editReply({
+      components: [errorContainer(login.msg)],
+      flags: [MessageFlags.IsComponentsV2],
+    });
+    return null;
+  }
+
+  return { token: login.data.token, hgId: login.data.hgId };
+}
+
+/** @param {import("discord.js").ModalSubmitInteraction} interaction */
+async function getLoginDataFromCookie(interaction) {
+  const cookieToken = interaction.fields.getTextInputValue('token');
+
+  await interaction.editReply({
+    components: [textContainer('Attempting to parse cookie token...')],
+    flags: [MessageFlags.IsComponentsV2],
+  });
+
+  const parsed = parseCookieToken(cookieToken);
+  if (!parsed) {
+    await interaction.editReply({
+      components: [
+        errorContainer(
+          'Failed to parse cookie. Ensure it contains ACCOUNT_TOKEN, SK_OAUTH_CRED_KEY, and HG_INFO_KEY (with hgId).'
+        ),
+      ],
+      flags: [MessageFlags.IsComponentsV2],
+    });
+    return null;
+  }
+
+  return { token: parsed.token, hgId: parsed.hgId };
+}

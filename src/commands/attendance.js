@@ -52,15 +52,15 @@ export default {
 
     await interaction.deferReply();
 
-    /** @type {number | null} */
-    let eventId = null;
-    if (BotConfig.environment === 'production') {
-      const event = await Events.create(interaction.user.id, {
-        source: 'slash',
-        action: 'attendance',
-      });
-      eventId = event[0]?.id ?? null;
-    }
+    const eventId =
+      BotConfig.environment === 'production'
+        ? ((
+            await Events.create(interaction.user.id, {
+              source: 'slash',
+              action: 'attendance',
+            })
+          )[0]?.id ?? null)
+        : null;
 
     const accountList = await Accounts.getByDcid(user.dcid);
     if (!accountList || accountList.length === 0) {

@@ -23,3 +23,23 @@ export const ProfessionEmojis = {
 
 export const RarityEmoji = '<:UI_Rarity:1467035828139196478>';
 export const Rarity2Emoji = '<:UI_RarityLight:1473065404992589984>';
+
+/** @param {Record<string, string>} emojis @param {string | undefined} key */
+function lookupEmoji(emojis, key) {
+  return Object.entries(emojis).find(([name]) => name === key)?.[1] ?? '';
+}
+
+/** @param {string | undefined} name */
+export function getProfileEmoji(name) {
+  return lookupEmoji(ProfileEmojis, name);
+}
+
+/** @param {string | undefined} name */
+export function getPropertyEmoji(name) {
+  return lookupEmoji(PropertyEmojis, name);
+}
+
+/** @param {string | undefined} name */
+export function getProfessionEmoji(name) {
+  return lookupEmoji(ProfessionEmojis, name);
+}

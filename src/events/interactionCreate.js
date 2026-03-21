@@ -1,4 +1,4 @@
-import { Events, MessageFlags } from 'discord.js';
+import { Collection, Events, MessageFlags } from 'discord.js';
 import { errorContainer } from '#/components/containers/index.js';
 import logger from '#/logger';
 
@@ -6,19 +6,34 @@ export default {
   name: Events.InteractionCreate,
   /** @param {import("discord.js").Interaction} interaction */
   async execute(interaction) {
-    const client = interaction.client;
-
     if (interaction.isChatInputCommand() || interaction.isContextMenuCommand()) {
-      const command =
-        /** @type {import("discord.js").Client & { commands: import("discord.js").Collection<string, any> }} */ (
-          client
-        ).commands.get(interaction.commandName);
+      const command = interaction.client.commands.get(interaction.commandName);
 
       if (!command || typeof command.execute !== 'function') {
         logger.error(`[Discord] Command ${interaction.commandName} not found`);
         await reply(interaction, 'Command not found');
         return;
       }
+
+      const now = Date.now();
+      const timestamps = getCooldownTimestamps(interaction.client, command.data.name);
+      const cooldownAmount = (command.data.cooldown ?? 5) * 1000;
+      const existingTimestamp = timestamps.get(interaction.user.id);
+
+      if (existingTimestamp != null) {
+        const expirationTime = existingTimestamp + cooldownAmount;
+        if (now < expirationTime) {
+          const timeLeft = Math.ceil(expirationTime / 1000);
+          await reply(
+            interaction,
+            `Please wait, you are on a cooldown for \`/${command.data.name}\`. You can use it again <t:${timeLeft}:R>.`
+          );
+          return;
+        }
+      }
+
+      timestamps.set(interaction.user.id, now);
+      setTimeout(() => timestamps.delete(interaction.user.id), cooldownAmount);
 
       try {
         await command.execute(interaction);
@@ -27,10 +42,7 @@ export default {
         await reply(interaction, 'There was an error while executing this command');
       }
     } else if (interaction.isAutocomplete()) {
-      const command =
-        /** @type {import("discord.js").Client & { commands: import("discord.js").Collection<string, any> }} */ (
-          interaction.client
-        ).commands.get(interaction.commandName);
+      const command = interaction.client.commands.get(interaction.commandName);
 
       if (!command || typeof command.autocomplete !== 'function') {
         logger.error(`[Discord] Autocomplete command ${interaction.commandName} not found`);
@@ -55,10 +67,7 @@ export default {
       }
 
       const [commandName, ...args] = interaction.customId.split('-');
-      const command =
-        /** @type {import("discord.js").Client & { commands: import("discord.js").Collection<string, any> }} */ (
-          client
-        ).commands.get(commandName);
+      const command = interaction.client.commands.get(commandName);
 
       if (!command || typeof command.button !== 'function') {
         logger.error(`[Discord] Button command ${commandName} not found`);
@@ -74,10 +83,7 @@ export default {
       }
     } else if (interaction.isModalSubmit()) {
       const [commandName, ...args] = interaction.customId.split('-');
-      const command =
-        /** @type {import("discord.js").Client & { commands: import("discord.js").Collection<string, any> }} */ (
-          client
-        ).commands.get(commandName);
+      const command = interaction.client.commands.get(commandName);
 
       if (!command || typeof command.modal !== 'function') {
         logger.error(`[Discord] Modal command ${commandName} not found`);
@@ -99,10 +105,7 @@ export default {
       }
 
       const [commandName, ...args] = interaction.customId.split('-');
-      const command =
-        /** @type {import("discord.js").Client & { commands: import("discord.js").Collection<string, any> }} */ (
-          client
-        ).commands.get(commandName);
+      const command = interaction.client.commands.get(commandName);
 
       if (!command || typeof command.selectMenu !== 'function') {
         logger.error(`[Discord] Select menu command ${commandName} not found`);
@@ -126,7 +129,7 @@ export default {
 /**
  *
  * @param {import("discord.js").Interaction} interaction
- * @param {*} message
+ * @param {string} message
  */
 async function reply(interaction, message) {
   if (interaction.isAutocomplete()) {
@@ -145,4 +148,19 @@ async function reply(interaction, message) {
       flags: [MessageFlags.Ephemeral, MessageFlags.IsComponentsV2],
     });
   }
+}
+
+/**
+ * @param {import('discord.js').Client} client
+ * @param {string} commandName
+ */
+function getCooldownTimestamps(client, commandName) {
+  let timestamps = client.cooldowns.get(commandName);
+
+  if (!timestamps) {
+    timestamps = new Collection();
+    client.cooldowns.set(commandName, timestamps);
+  }
+
+  return timestamps;
 }
