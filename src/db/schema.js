@@ -150,4 +150,5 @@ export const users = pgTable('users', {
   isBanned: boolean('is_banned').default(false).notNull(),
   enableNotif: boolean('enable_notif').default(true).notNull(),
   lang: text().default('en-us').notNull(),
+  isPrivate: boolean('is_private').default(false).notNull(),
 });

@@ -68,6 +68,32 @@ export class Accounts {
       .where(and(eq(accounts.dcid, dcid), eq(accounts.id, aid)));
   }
   /**
+   * Set an account as the primary account for a user.
+   * @param {string} dcid - The Discord ID
+   * @param {number} shortId - The short account ID to set as primary
+   */
+  static async setPrimary(dcid, shortId) {
+    await db.transaction(async (tx) => {
+      await tx.update(accounts).set({ isPrimary: false }).where(eq(accounts.dcid, dcid));
+      const target = await tx.query.accounts.findFirst({
+        where: and(eq(accounts.dcid, dcid), eq(accounts.shortId, shortId)),
+        columns: { id: true },
+      });
+      if (target)
+        await tx.update(accounts).set({ isPrimary: true }).where(eq(accounts.id, target.id));
+    });
+  }
+  /**
+   * Delete an account.
+   * @param {string} dcid - The Discord ID
+   * @param {number} shortId - The short account ID to delete
+   */
+  static async delete(dcid, shortId) {
+    const account = await Accounts.getByDcidAndShortId(dcid, shortId);
+    if (!account) return;
+    await db.delete(accounts).where(and(eq(accounts.dcid, dcid), eq(accounts.id, account.id)));
+  }
+  /**
    * Get an account by a matching key and value
    * @param {keyof typeof accounts.$inferSelect} key - The key to match
    * @param {any} value - The value to match
