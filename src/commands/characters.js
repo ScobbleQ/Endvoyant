@@ -17,6 +17,7 @@ import {
 import { ElementType, Profession } from '#/constants/skport.js';
 import { Accounts, Events } from '#/db/index.js';
 import { getCachedCardDetail } from '#/skport/utils/getCachedCardDetail.js';
+import { createComponentId } from '#/utils/componentId.js';
 import { getMaxLevel, getBreakthroughLevel } from '#/utils/game.js';
 import { generateCharacterBuild } from '#/utils/generateCharacterBuild.js';
 import { BotConfig } from '#/config';
@@ -30,6 +31,18 @@ const INITIAL_STATE = {
   element: 'all',
   rarity: 'all',
   shortId: 0,
+};
+
+const characterButtonInteractions = {
+  catalog: { ownerOnly: true, execute: showCharactersCatalog },
+  view: { ownerOnly: true, execute: showCharacterDetail },
+  page: { ownerOnly: true, execute: showCharactersPage },
+  rarity: { ownerOnly: true, execute: filterCharactersByRarity },
+  image: { ownerOnly: true, execute: generateCharacterImage },
+};
+
+const characterSelectMenuInteractions = {
+  filter: { ownerOnly: true, execute: filterCharactersSelectMenu },
 };
 
 /** @param {{ page: number, profession: string, element: string, rarity: string, shortId?: number }} state */
@@ -192,19 +205,19 @@ const buildCatalogContainer = (chars, { page, profession, element, rarity, short
   container.addActionRowComponents((actionRow) =>
     actionRow.addComponents(
       new ButtonBuilder()
-        .setCustomId(`characters-rarity:*:${stateStr}`)
+        .setCustomId(createComponentId('characters', 'rarity', '*', stateStr))
         .setLabel('✦')
         .setStyle(rarity === 'all' ? ButtonStyle.Success : ButtonStyle.Secondary),
       new ButtonBuilder()
-        .setCustomId(`characters-rarity:4:${stateStr}`)
+        .setCustomId(createComponentId('characters', 'rarity', '4', stateStr))
         .setLabel('4 ✦')
         .setStyle(rarity === '4' ? ButtonStyle.Success : ButtonStyle.Secondary),
       new ButtonBuilder()
-        .setCustomId(`characters-rarity:5:${stateStr}`)
+        .setCustomId(createComponentId('characters', 'rarity', '5', stateStr))
         .setLabel('5 ✦')
         .setStyle(rarity === '5' ? ButtonStyle.Success : ButtonStyle.Secondary),
       new ButtonBuilder()
-        .setCustomId(`characters-rarity:6:${stateStr}`)
+        .setCustomId(createComponentId('characters', 'rarity', '6', stateStr))
         .setLabel('6 ✦')
         .setStyle(rarity === '6' ? ButtonStyle.Success : ButtonStyle.Secondary)
     )
@@ -213,7 +226,7 @@ const buildCatalogContainer = (chars, { page, profession, element, rarity, short
   container.addActionRowComponents((actionRow) =>
     actionRow.setComponents(
       new StringSelectMenuBuilder()
-        .setCustomId(`characters-filter-opclass-${stateStr}`)
+        .setCustomId(createComponentId('characters', 'filter', 'opclass', stateStr))
         .setPlaceholder('Filter by profession')
         .addOptions(
           {
@@ -234,7 +247,7 @@ const buildCatalogContainer = (chars, { page, profession, element, rarity, short
   container.addActionRowComponents((actionRow) =>
     actionRow.setComponents(
       new StringSelectMenuBuilder()
-        .setCustomId(`characters-filter-element-${stateStr}`)
+        .setCustomId(createComponentId('characters', 'filter', 'element', stateStr))
         .setPlaceholder('Filter by element')
         .addOptions(
           {
@@ -283,7 +296,7 @@ const buildCatalogContainer = (chars, { page, profession, element, rarity, short
           )
           .setButtonAccessory((button) =>
             button
-              .setCustomId(`characters-view:${op.charData.id}:${stateStr}`)
+              .setCustomId(createComponentId('characters', 'view', op.charData.id, stateStr))
               .setLabel('View Character')
               .setStyle(ButtonStyle.Primary)
           )
@@ -312,17 +325,17 @@ const buildCatalogContainer = (chars, { page, profession, element, rarity, short
     container.addActionRowComponents((actionRow) =>
       actionRow.addComponents(
         new ButtonBuilder()
-          .setCustomId(`characters-page-prev-${prevStateStr}`)
+          .setCustomId(createComponentId('characters', 'page', prevStateStr))
           .setLabel('Previous')
           .setStyle(clampedPage === 0 ? ButtonStyle.Secondary : ButtonStyle.Success)
           .setDisabled(clampedPage === 0),
         new ButtonBuilder()
-          .setCustomId(`characters-page-display`)
+          .setCustomId(createComponentId('characters', 'page', stateStr))
           .setLabel(`${clampedPage + 1} / ${totalPages}`)
           .setStyle(ButtonStyle.Secondary)
           .setDisabled(true),
         new ButtonBuilder()
-          .setCustomId(`characters-page-next-${nextStateStr}`)
+          .setCustomId(createComponentId('characters', 'page', nextStateStr))
           .setLabel('Next')
           .setStyle(clampedPage >= totalPages - 1 ? ButtonStyle.Secondary : ButtonStyle.Success)
           .setDisabled(clampedPage >= totalPages - 1)
@@ -427,8 +440,8 @@ const buildCharacterContainer = (character, catalogStateStr) => {
   container.addSeparatorComponents((separator) => separator);
 
   const backCustomId = catalogStateStr
-    ? `characters-catalog-${catalogStateStr}`
-    : 'characters-catalog';
+    ? createComponentId('characters', 'catalog', catalogStateStr)
+    : createComponentId('characters', 'catalog');
 
   const backButton = new ButtonBuilder()
     .setCustomId(backCustomId)
@@ -438,7 +451,7 @@ const buildCharacterContainer = (character, catalogStateStr) => {
   const sid = catalogStateStr ? parseState(catalogStateStr).shortId : 0;
   const imagePayload = sid > 0 ? `${character.charData.id}:${sid}` : character.charData.id;
   const toImageButton = new ButtonBuilder()
-    .setCustomId(`characters-image:${imagePayload}`)
+    .setCustomId(createComponentId('characters', 'image', imagePayload))
     .setLabel('Generate Image')
     .setStyle(ButtonStyle.Secondary);
 
@@ -447,20 +460,6 @@ const buildCharacterContainer = (character, catalogStateStr) => {
   );
 
   return container;
-};
-
-/**
- * Parse button customId and return action + payload
- * @param {string[]} args - From customId split by '-'
- * @returns {{ action: string, payload: string }}
- */
-const parseButtonArgs = (args) => {
-  const first = args[0] ?? '';
-  if (first.includes(':')) {
-    const [action, ...rest] = first.split(':');
-    return { action: action ?? '', payload: rest.join(':') ?? '' };
-  }
-  return { action: first, payload: args[2] ?? '' };
 };
 
 export default {
@@ -594,115 +593,147 @@ export default {
       flags: [MessageFlags.IsComponentsV2],
     });
   },
-  /** @param {import('discord.js').ButtonInteraction} interaction @param {...string} args */
-  async button(interaction, ...args) {
-    const { action, payload } = parseButtonArgs(args);
-    await interaction.deferUpdate();
-
-    const resolveAidFromShortId = async (shortId = 0) => {
-      if (!shortId) return undefined;
-      const account = await Accounts.getByDcidAndShortId(interaction.user.id, shortId);
-      return account?.id;
-    };
-
-    if (action === 'catalog') {
-      const stateStr = args[1];
-      const state = stateStr ? parseState(stateStr) : INITIAL_STATE;
-      const aid = await resolveAidFromShortId(state.shortId);
-      const characters = await getCharacters(interaction.user.id, aid);
-      if (!characters || characters.status !== 0) {
-        await charactersErrorReply(interaction, characters);
-        return;
-      }
-      const container = buildCatalogContainer(characters.data, state);
-      await interaction.editReply({ components: [container], files: [notFoundImage] });
-      return;
-    }
-
-    const shortId = ['view', 'page', 'rarity'].includes(action)
-      ? parseState(payload).shortId
-      : action === 'image'
-        ? (() => {
-            const [, sid] = payload.split(':');
-            return parseInt(sid, 10) || 0;
-          })()
-        : 0;
-    const aid = await resolveAidFromShortId(shortId);
-    const characters = await getCharacters(interaction.user.id, aid);
-    if (!characters || characters.status !== 0) {
-      await charactersErrorReply(interaction, characters);
-      return;
-    }
-
-    if (action === 'view' && payload) {
-      const [charId, ...stateParts] = payload.split(':');
-      const catalogStateStr = stateParts.length > 0 ? stateParts.join(':') : undefined;
-      const character = characters.data.find((c) => c.charData.id === charId);
-      if (character) {
-        await interaction.editReply({
-          components: [buildCharacterContainer(character, catalogStateStr)],
-        });
-      }
-      return;
-    }
-
-    if (action === 'page' && payload) {
-      const container = buildCatalogContainer(characters.data, parseState(payload));
-      await interaction.editReply({ components: [container], files: [notFoundImage] });
-      return;
-    }
-
-    if (action === 'rarity' && payload) {
-      const [rarity, ...stateParts] = payload.split(':');
-      const baseState = parseState(stateParts.join(':'));
-      const state = {
-        ...baseState,
-        page: 0,
-        rarity: rarity === '*' ? 'all' : rarity,
-      };
-      const container = buildCatalogContainer(characters.data, state);
-      await interaction.editReply({ components: [container], files: [notFoundImage] });
-      return;
-    }
-
-    if (action === 'image' && payload) {
-      const charId = payload.includes(':') ? payload.split(':')[0] : payload;
-      const character = characters.data.find((c) => c.charData.id === charId);
-      if (character) {
-        const attachment = await generateCharacterBuild(interaction.user.id, character);
-        await interaction.followUp({ files: [attachment] });
-      }
-    }
-  },
-  /** @param {import('discord.js').StringSelectMenuInteraction} interaction @param {...string} args */
-  async selectMenu(interaction, ...args) {
-    const [filterType, filterWhich, stateStr] = args;
-    if (filterType !== 'filter' || !stateStr) return;
-
-    await interaction.deferUpdate();
-
-    const state = parseState(stateStr);
-    const selectedValue = interaction.values[0];
-    const profession = filterWhich === 'opclass' ? selectedValue : state.profession;
-    const element = filterWhich === 'element' ? selectedValue : state.element;
-
-    const aid = state.shortId
-      ? (await Accounts.getByDcidAndShortId(interaction.user.id, state.shortId))?.id
-      : undefined;
-
-    const characters = await getCharacters(interaction.user.id, aid);
-    if (!characters || characters.status !== 0) {
-      await charactersErrorReply(interaction, characters);
-      return;
-    }
-
-    const container = buildCatalogContainer(characters.data, {
-      page: 0,
-      profession,
-      element,
-      rarity: state.rarity ?? 'all',
-      shortId: state.shortId,
-    });
-    await interaction.editReply({ components: [container], files: [notFoundImage] });
+  interactions: {
+    button: characterButtonInteractions,
+    selectMenu: characterSelectMenuInteractions,
   },
 };
+
+/** @param {import('discord.js').MessageComponentInteraction} interaction @param {number} [shortId=0] */
+async function getCharactersForInteraction(interaction, shortId = 0) {
+  const aid = shortId
+    ? (await Accounts.getByDcidAndShortId(interaction.user.id, shortId))?.id
+    : undefined;
+  return getCharacters(interaction.user.id, aid);
+}
+
+/** @param {import('discord.js').ButtonInteraction} interaction @param {string} [stateStr] */
+async function showCharactersCatalog(interaction, stateStr) {
+  await interaction.deferUpdate();
+
+  const state = stateStr ? parseState(stateStr) : INITIAL_STATE;
+  const characters = await getCharactersForInteraction(interaction, state.shortId);
+  if (!characters || characters.status !== 0) {
+    await charactersErrorReply(interaction, characters);
+    return;
+  }
+
+  const container = buildCatalogContainer(characters.data, state);
+  await interaction.editReply({ components: [container], files: [notFoundImage] });
+}
+
+/**
+ * @param {import('discord.js').ButtonInteraction} interaction
+ * @param {string} charId
+ * @param {string} [catalogStateStr]
+ */
+async function showCharacterDetail(interaction, charId, catalogStateStr) {
+  await interaction.deferUpdate();
+
+  const state = catalogStateStr ? parseState(catalogStateStr) : INITIAL_STATE;
+  const characters = await getCharactersForInteraction(interaction, state.shortId);
+  if (!characters || characters.status !== 0) {
+    await charactersErrorReply(interaction, characters);
+    return;
+  }
+
+  const character = characters.data.find((c) => c.charData.id === charId);
+  if (!character) {
+    await interaction.editReply({ components: [errorContainer('Character not found')] });
+    return;
+  }
+
+  await interaction.editReply({
+    components: [buildCharacterContainer(character, catalogStateStr)],
+  });
+}
+
+/** @param {import('discord.js').ButtonInteraction} interaction @param {string} stateStr */
+async function showCharactersPage(interaction, stateStr) {
+  await interaction.deferUpdate();
+
+  const state = parseState(stateStr);
+  const characters = await getCharactersForInteraction(interaction, state.shortId);
+  if (!characters || characters.status !== 0) {
+    await charactersErrorReply(interaction, characters);
+    return;
+  }
+
+  const container = buildCatalogContainer(characters.data, state);
+  await interaction.editReply({ components: [container], files: [notFoundImage] });
+}
+
+/**
+ * @param {import('discord.js').ButtonInteraction} interaction
+ * @param {string} rarity
+ * @param {string} stateStr
+ */
+async function filterCharactersByRarity(interaction, rarity, stateStr) {
+  await interaction.deferUpdate();
+
+  const baseState = parseState(stateStr);
+  const characters = await getCharactersForInteraction(interaction, baseState.shortId);
+  if (!characters || characters.status !== 0) {
+    await charactersErrorReply(interaction, characters);
+    return;
+  }
+
+  const state = {
+    ...baseState,
+    page: 0,
+    rarity: rarity === '*' ? 'all' : rarity,
+  };
+  const container = buildCatalogContainer(characters.data, state);
+  await interaction.editReply({ components: [container], files: [notFoundImage] });
+}
+
+/** @param {import('discord.js').ButtonInteraction} interaction @param {string} payload */
+async function generateCharacterImage(interaction, payload) {
+  await interaction.deferUpdate();
+
+  const [charId, sid] = payload.split(':');
+  const shortId = parseInt(sid ?? '0', 10) || 0;
+  const characters = await getCharactersForInteraction(interaction, shortId);
+  if (!characters || characters.status !== 0) {
+    await charactersErrorReply(interaction, characters);
+    return;
+  }
+
+  const character = characters.data.find((c) => c.charData.id === charId);
+  if (!character) {
+    await interaction.editReply({ components: [errorContainer('Character not found')] });
+    return;
+  }
+
+  const attachment = await generateCharacterBuild(interaction.user.id, character);
+  await interaction.followUp({ files: [attachment] });
+}
+
+/**
+ * @param {import('discord.js').StringSelectMenuInteraction} interaction
+ * @param {string} filterWhich
+ * @param {string} stateStr
+ */
+async function filterCharactersSelectMenu(interaction, filterWhich, stateStr) {
+  await interaction.deferUpdate();
+
+  const state = parseState(stateStr);
+  const selectedValue = interaction.values[0];
+  const profession = filterWhich === 'opclass' ? selectedValue : state.profession;
+  const element = filterWhich === 'element' ? selectedValue : state.element;
+
+  const characters = await getCharactersForInteraction(interaction, state.shortId);
+  if (!characters || characters.status !== 0) {
+    await charactersErrorReply(interaction, characters);
+    return;
+  }
+
+  const container = buildCatalogContainer(characters.data, {
+    page: 0,
+    profession,
+    element,
+    rarity: state.rarity ?? 'all',
+    shortId: state.shortId,
+  });
+  await interaction.editReply({ components: [container], files: [notFoundImage] });
+}

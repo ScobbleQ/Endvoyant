@@ -7,7 +7,12 @@ import {
 import { errorContainer, textContainer } from '#/components/index.js';
 import { Events, Accounts, Users } from '#/db/index.js';
 import { getCachedCardDetail } from '#/skport/utils/getCachedCardDetail.js';
+import { createComponentId } from '#/utils/componentId.js';
 import { BotConfig } from '#/config';
+
+const developmentSelectMenuInteractions = {
+  domain: { ownerOnly: true, execute: handleDevelopmentDomainSelect },
+};
 
 /** @param {Array<{ id: string; shortId?: number; isPrimary?: boolean; isPrivate?: boolean }>} accounts @param {number} [shortId] */
 const resolveAccount = (accounts, shortId) =>
@@ -89,7 +94,9 @@ const buildDevelopmentContainer = (domains, domainIndex, { shortId = 0, dcid } =
       actionRow.setComponents(
         new StringSelectMenuBuilder()
           .setCustomId(
-            dcid ? `development-domain-${shortId}-${dcid}` : `development-domain-${shortId}`
+            dcid
+              ? createComponentId('development', 'domain', String(shortId), dcid)
+              : createComponentId('development', 'domain', String(shortId))
           )
           .setPlaceholder('Switch region')
           .addOptions(
@@ -235,42 +242,47 @@ export default {
       flags: [MessageFlags.IsComponentsV2],
     });
   },
-  /** @param {import('discord.js').StringSelectMenuInteraction} interaction @param {...string} args */
-  async selectMenu(interaction, ...args) {
-    const [action, shortIdStr, targetDcid] = args;
-    if (action !== 'domain') return;
-
-    await interaction.deferUpdate();
-
-    const accountShortId = parseInt(shortIdStr ?? '0', 10) || 0;
-    const dcid = targetDcid || interaction.user.id;
-    const accounts = await Accounts.getByDcid(dcid);
-    const account = resolveAccount(accounts ?? [], accountShortId);
-
-    if (!account) {
-      await interaction.editReply({
-        components: [errorContainer('Account not found.')],
-        flags: [MessageFlags.IsComponentsV2],
-      });
-      return;
-    }
-
-    const profile = await getCachedCardDetail(dcid, account.id);
-    if (!profile || profile.status !== 0) {
-      const { code, msg } = parseProfileError(profile);
-      await interaction.editReply({
-        components: [errorContainer(`[${code}] ${msg}`)],
-        flags: [MessageFlags.IsComponentsV2],
-      });
-      return;
-    }
-
-    const domainIndex = parseInt(interaction.values[0] ?? '0', 10);
-    const container = buildDevelopmentContainer(
-      profile.data.domain,
-      domainIndex,
-      containerContext(dcid, interaction.user.id, account)
-    );
-    await interaction.editReply({ components: [container] });
+  interactions: {
+    selectMenu: developmentSelectMenuInteractions,
   },
 };
+
+/**
+ * @param {import('discord.js').StringSelectMenuInteraction} interaction
+ * @param {string} [shortIdStr]
+ * @param {string} [targetDcid]
+ */
+async function handleDevelopmentDomainSelect(interaction, shortIdStr, targetDcid) {
+  await interaction.deferUpdate();
+
+  const accountShortId = parseInt(shortIdStr ?? '0', 10) || 0;
+  const dcid = targetDcid || interaction.user.id;
+  const accounts = await Accounts.getByDcid(dcid);
+  const account = resolveAccount(accounts ?? [], accountShortId);
+
+  if (!account) {
+    await interaction.editReply({
+      components: [errorContainer('Account not found.')],
+      flags: [MessageFlags.IsComponentsV2],
+    });
+    return;
+  }
+
+  const profile = await getCachedCardDetail(dcid, account.id);
+  if (!profile || profile.status !== 0) {
+    const { code, msg } = parseProfileError(profile);
+    await interaction.editReply({
+      components: [errorContainer(`[${code}] ${msg}`)],
+      flags: [MessageFlags.IsComponentsV2],
+    });
+    return;
+  }
+
+  const domainIndex = parseInt(interaction.values[0] ?? '0', 10);
+  const container = buildDevelopmentContainer(
+    profile.data.domain,
+    domainIndex,
+    containerContext(dcid, interaction.user.id, account)
+  );
+  await interaction.editReply({ components: [container] });
+}

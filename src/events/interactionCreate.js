@@ -1,5 +1,7 @@
 import { Collection, Events, MessageFlags } from 'discord.js';
 import { errorContainer } from '#/components/containers/index.js';
+import { parseComponentId } from '#/utils/componentId.js';
+import { canUseOwnedInteraction, getInteractionRouteHandler } from '#/utils/interactionRouting.js';
 import logger from '#/logger';
 
 export default {
@@ -60,65 +62,23 @@ export default {
         await reply(interaction, 'There was an error while executing this autocomplete');
       }
     } else if (interaction.isButton()) {
-      // Ensure only owner is able to use the button
-      if (interaction.user.id !== interaction.message.interactionMetadata?.user.id) {
-        await reply(interaction, 'You are not the owner of this message');
-        return;
-      }
-
-      const [commandName, ...args] = interaction.customId.split('-');
-      const command = interaction.client.commands.get(commandName);
-
-      if (!command || typeof command.button !== 'function') {
-        logger.error(`[Discord] Button command ${commandName} not found`);
-        await reply(interaction, 'Button command not found');
-        return;
-      }
-
-      try {
-        await command.button(interaction, ...args);
-      } catch (error) {
-        logger.error(error, `[Discord] Error executing button command ${commandName}`);
-        await reply(interaction, 'There was an error while executing this button');
-      }
+      await handleComponentInteraction(interaction, {
+        interactionType: 'button',
+        notFoundMessage: 'Button command not found',
+        errorMessage: 'There was an error while executing this button',
+      });
     } else if (interaction.isModalSubmit()) {
-      const [commandName, ...args] = interaction.customId.split('-');
-      const command = interaction.client.commands.get(commandName);
-
-      if (!command || typeof command.modal !== 'function') {
-        logger.error(`[Discord] Modal command ${commandName} not found`);
-        await reply(interaction, 'Modal command not found');
-        return;
-      }
-
-      try {
-        await command.modal(interaction, ...args);
-      } catch (error) {
-        logger.error(error, `[Discord] Error executing modal command ${commandName}`);
-        await reply(interaction, 'There was an error while executing this modal');
-      }
+      await handleComponentInteraction(interaction, {
+        interactionType: 'modal',
+        notFoundMessage: 'Modal command not found',
+        errorMessage: 'There was an error while executing this modal',
+      });
     } else if (interaction.isStringSelectMenu()) {
-      // Ensure only owner is able to use the select menu
-      if (interaction.user.id !== interaction.message.interactionMetadata?.user.id) {
-        await reply(interaction, 'You are not the owner of this message');
-        return;
-      }
-
-      const [commandName, ...args] = interaction.customId.split('-');
-      const command = interaction.client.commands.get(commandName);
-
-      if (!command || typeof command.selectMenu !== 'function') {
-        logger.error(`[Discord] Select menu command ${commandName} not found`);
-        await reply(interaction, 'Select menu command not found');
-        return;
-      }
-
-      try {
-        await command.selectMenu(interaction, ...args);
-      } catch (error) {
-        logger.error(error, `[Discord] Error executing select menu command ${commandName}`);
-        await reply(interaction, 'There was an error while executing this select menu');
-      }
+      await handleComponentInteraction(interaction, {
+        interactionType: 'selectMenu',
+        notFoundMessage: 'Select menu command not found',
+        errorMessage: 'There was an error while executing this select menu',
+      });
     } else {
       logger.error(`[Discord] Unhandled interaction type: ${interaction.type}`);
       await reply(interaction, 'Unknown interaction type');
@@ -163,4 +123,42 @@ function getCooldownTimestamps(client, commandName) {
   }
 
   return timestamps;
+}
+
+/**
+ * @param {import('discord.js').ButtonInteraction | import('discord.js').ModalSubmitInteraction | import('discord.js').StringSelectMenuInteraction} interaction
+ * @param {{
+ *   interactionType: 'button' | 'modal' | 'selectMenu',
+ *   notFoundMessage: string,
+ *   errorMessage: string,
+ * }} options
+ */
+async function handleComponentInteraction(interaction, options) {
+  const routed = parseComponentId(interaction.customId);
+  if (!routed) {
+    logger.error(`[Discord] Invalid ${options.interactionType} customId ${interaction.customId}`);
+    await reply(interaction, options.notFoundMessage);
+    return;
+  }
+
+  const command = interaction.client.commands.get(routed.commandName);
+  const handler = getInteractionRouteHandler(command, options.interactionType, routed.routeKey);
+
+  if (!command || !handler) {
+    logger.error(`[Discord] Routed ${options.interactionType} ${interaction.customId} not found`);
+    await reply(interaction, options.notFoundMessage);
+    return;
+  }
+
+  if (handler.ownerOnly && !interaction.isModalSubmit() && !canUseOwnedInteraction(interaction)) {
+    await reply(interaction, 'You are not the owner of this message');
+    return;
+  }
+
+  try {
+    await handler.execute(interaction, ...routed.args);
+  } catch (error) {
+    logger.error(error, `[Discord] Error executing routed ${options.interactionType}`);
+    await reply(interaction, options.errorMessage);
+  }
 }

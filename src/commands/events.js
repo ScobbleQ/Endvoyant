@@ -8,7 +8,14 @@ import {
 import { errorContainer } from '#/components/index.js';
 import { Events as DbEvents } from '#/db/index.js';
 import { getCachedEnrichedEvents } from '#/skport/utils/getCachedEvents.js';
+import { createComponentId } from '#/utils/componentId.js';
 import { BotConfig } from '#/config';
+
+const eventButtonInteractions = {
+  catalog: showEventsCatalog,
+  page: showEventsCatalog,
+  view: showEventDetail,
+};
 
 /** @typedef {import('#/types/skport/game.js').CachedBulletinEvent} CachedBulletinEvent */
 
@@ -135,7 +142,7 @@ function buildCatalogContainer(list, page) {
         .addTextDisplayComponents((textDisplay) => textDisplay.setContent(lines.join('\n')))
         .setButtonAccessory((button) =>
           button
-            .setCustomId(`events-view:${ev.cid}:${clampedPage}`)
+            .setCustomId(createComponentId('events', 'view', ev.cid, String(clampedPage)))
             .setLabel('View event')
             .setStyle(ButtonStyle.Primary)
         )
@@ -149,17 +156,17 @@ function buildCatalogContainer(list, page) {
     container.addActionRowComponents((actionRow) =>
       actionRow.addComponents(
         new ButtonBuilder()
-          .setCustomId(`events-page-prev-${prevPage}`)
+          .setCustomId(createComponentId('events', 'page', String(prevPage)))
           .setLabel('Previous')
           .setStyle(clampedPage === 0 ? ButtonStyle.Secondary : ButtonStyle.Success)
           .setDisabled(clampedPage === 0),
         new ButtonBuilder()
-          .setCustomId(`events-page-display`)
+          .setCustomId(createComponentId('events', 'page', 'display'))
           .setLabel(`${clampedPage + 1} / ${totalPages}`)
           .setStyle(ButtonStyle.Secondary)
           .setDisabled(true),
         new ButtonBuilder()
-          .setCustomId(`events-page-next-${nextPage}`)
+          .setCustomId(createComponentId('events', 'page', String(nextPage)))
           .setLabel('Next')
           .setStyle(clampedPage >= totalPages - 1 ? ButtonStyle.Secondary : ButtonStyle.Success)
           .setDisabled(clampedPage >= totalPages - 1)
@@ -201,7 +208,7 @@ function buildEventDetailContainer(ev, catalogPage) {
   container.addActionRowComponents((actionRow) =>
     actionRow.addComponents(
       new ButtonBuilder()
-        .setCustomId(`events-catalog-${catalogPage}`)
+        .setCustomId(createComponentId('events', 'catalog', String(catalogPage)))
         .setLabel('Back')
         .setStyle(ButtonStyle.Secondary)
     )
@@ -219,19 +226,6 @@ function getEnrichedError(enriched) {
     return enriched?.msg ?? 'Failed to load events';
   }
   return null;
-}
-
-/**
- * @param {string[]} args - Segments after customId split by '-'
- * @returns {{ action: string, payload: string }}
- */
-function parseButtonArgs(args) {
-  const first = args[0] ?? '';
-  const colonIdx = first.indexOf(':');
-  if (colonIdx !== -1) {
-    return { action: first.slice(0, colonIdx), payload: first.slice(colonIdx + 1) };
-  }
-  return { action: first, payload: args[2] ?? '' };
 }
 
 export default {
@@ -324,48 +318,57 @@ export default {
       flags: [MessageFlags.IsComponentsV2],
     });
   },
-
-  /** @param {import("discord.js").ButtonInteraction} interaction @param {...string} args */
-  async button(interaction, ...args) {
-    const { action, payload } = parseButtonArgs(args);
-    await interaction.deferUpdate();
-
-    const enriched = await getCachedEnrichedEvents();
-    if (!enriched || enriched.status !== 0) {
-      await interaction.editReply({
-        components: [errorContainer(getEnrichedError(enriched) ?? 'Failed to load events')],
-        flags: [MessageFlags.IsComponentsV2],
-      });
-      return;
-    }
-
-    const list = enriched.data;
-    const byCid = enriched.byCid;
-
-    if (action === 'catalog' || (action === 'page' && payload !== '')) {
-      const page = Math.max(
-        0,
-        parseInt(action === 'catalog' ? (args[1] ?? '0') : payload, 10) || 0
-      );
-      await interaction.editReply({
-        components: [buildCatalogContainer(list, page)],
-        flags: [MessageFlags.IsComponentsV2],
-      });
-      return;
-    }
-
-    if (action === 'view' && payload) {
-      const lastColon = payload.lastIndexOf(':');
-      if (lastColon === -1) return;
-      const cid = payload.slice(0, lastColon);
-      const catalogPage = Math.max(0, parseInt(payload.slice(lastColon + 1), 10) || 0);
-      const ev = byCid[cid];
-      await interaction.editReply({
-        components: ev
-          ? [buildEventDetailContainer(ev, catalogPage)]
-          : [errorContainer('Event no longer available.')],
-        flags: [MessageFlags.IsComponentsV2],
-      });
-    }
+  interactions: {
+    button: eventButtonInteractions,
   },
 };
+
+/**
+ * @param {import("discord.js").ButtonInteraction} interaction
+ * @param {string} [pageStr]
+ */
+async function showEventsCatalog(interaction, pageStr) {
+  await interaction.deferUpdate();
+
+  const enriched = await getCachedEnrichedEvents();
+  if (!enriched || enriched.status !== 0) {
+    await interaction.editReply({
+      components: [errorContainer(getEnrichedError(enriched) ?? 'Failed to load events')],
+      flags: [MessageFlags.IsComponentsV2],
+    });
+    return;
+  }
+
+  const page = Math.max(0, parseInt(pageStr ?? '0', 10) || 0);
+  await interaction.editReply({
+    components: [buildCatalogContainer(enriched.data, page)],
+    flags: [MessageFlags.IsComponentsV2],
+  });
+}
+
+/**
+ * @param {import("discord.js").ButtonInteraction} interaction
+ * @param {string} cid
+ * @param {string} [catalogPageStr]
+ */
+async function showEventDetail(interaction, cid, catalogPageStr) {
+  await interaction.deferUpdate();
+
+  const enriched = await getCachedEnrichedEvents();
+  if (!enriched || enriched.status !== 0) {
+    await interaction.editReply({
+      components: [errorContainer(getEnrichedError(enriched) ?? 'Failed to load events')],
+      flags: [MessageFlags.IsComponentsV2],
+    });
+    return;
+  }
+
+  const catalogPage = Math.max(0, parseInt(catalogPageStr ?? '0', 10) || 0);
+  const ev = enriched.byCid[cid];
+  await interaction.editReply({
+    components: ev
+      ? [buildEventDetailContainer(ev, catalogPage)]
+      : [errorContainer('Event no longer available.')],
+    flags: [MessageFlags.IsComponentsV2],
+  });
+}
