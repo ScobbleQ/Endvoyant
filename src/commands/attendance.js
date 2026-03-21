@@ -74,7 +74,7 @@ export default {
     const accounts = accountQuery ? [accountList.find((a) => a.id === accountQuery)] : accountList;
     let hasContent = false;
 
-    const c = new ContainerBuilder().addTextDisplayComponents((textDisplay) =>
+    const container = new ContainerBuilder().addTextDisplayComponents((textDisplay) =>
       textDisplay.setContent(`## ▼// Sign-in Reward\n-# <t:${Math.floor(Date.now() / 1000)}:F>`)
     );
 
@@ -101,8 +101,8 @@ export default {
           hasContent = true;
 
           if (signin.status !== 0) {
-            c.addSeparatorComponents((separator) => separator);
-            c.addTextDisplayComponents((textDisplay) =>
+            container.addSeparatorComponents((separator) => separator);
+            container.addTextDisplayComponents((textDisplay) =>
               textDisplay.setContent(`${headingString}\n${signin.msg || 'Unknown error'}`)
             );
             return;
@@ -133,8 +133,8 @@ export default {
               ? `Additional Rewards:\n${bonusRewards.map((r) => `${r.name} x${r.count}`).join('\n')}`
               : '';
 
-          c.addSeparatorComponents((separator) => separator);
-          c.addSectionComponents((section) =>
+          container.addSeparatorComponents((separator) => separator);
+          container.addSectionComponents((section) =>
             section
               .addTextDisplayComponents((textDisplay) =>
                 textDisplay.setContent(`${headingString}\n${rewardString}\n\n${bonusString}`)
@@ -151,7 +151,7 @@ export default {
 
     if (hasContent) {
       await interaction.editReply({
-        components: [c],
+        components: [container],
         flags: [MessageFlags.IsComponentsV2],
       });
     }
