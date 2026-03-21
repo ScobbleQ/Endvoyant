@@ -1,6 +1,6 @@
-import { readdirSync } from 'node:fs';
 import { join } from 'node:path';
 import { Client, Collection, GatewayIntentBits } from 'discord.js';
+import { walkJavaScriptFiles } from '#/utils/walkJavaScriptFiles.js';
 import { BotConfig } from '#/config';
 import logger from '#/logger';
 
@@ -12,10 +12,9 @@ client.commands = new Collection();
 client.cooldowns = new Collection();
 
 const folderPath = join(import.meta.dirname, 'commands');
-const commandFiles = readdirSync(folderPath).filter((file) => file.endsWith('.js'));
+const commandFiles = walkJavaScriptFiles(folderPath);
 
-for (const file of commandFiles) {
-  const filePath = join(folderPath, file);
+for (const filePath of commandFiles) {
   const command = await import(filePath);
 
   if ('data' in command.default && 'execute' in command.default) {
@@ -26,10 +25,9 @@ for (const file of commandFiles) {
 }
 
 const eventPath = join(import.meta.dirname, 'events');
-const eventFiles = readdirSync(eventPath).filter((file) => file.endsWith('.js'));
+const eventFiles = walkJavaScriptFiles(eventPath);
 
-for (const file of eventFiles) {
-  const filePath = join(eventPath, file);
+for (const filePath of eventFiles) {
   const event = await import(filePath);
 
   if (event.default.once) {

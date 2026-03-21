@@ -6,9 +6,8 @@ import {
   ButtonStyle,
 } from 'discord.js';
 import { errorContainer } from '#/components/index.js';
-import { Events, Accounts, Users } from '#/db/index.js';
+import { Events, Users } from '#/db/index.js';
 import { BotConfig } from '#/config';
-import logger from '#/logger';
 
 export default {
   data: new SlashCommandBuilder()
@@ -33,9 +32,6 @@ export default {
         action: 'settings',
       });
     }
-
-    const account = await Accounts.getByDcid(interaction.user.id);
-    logger.debug(account);
 
     const container = new ContainerBuilder();
     container.addTextDisplayComponents((textDisplay) =>
