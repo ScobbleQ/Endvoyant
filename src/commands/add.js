@@ -67,6 +67,18 @@ export default {
       });
     }
 
+    if (user.isBanned) {
+      await interaction.reply({
+        components: [
+          errorContainer(
+            'You are banned from using this bot.\nPlease contact support if you believe this is an error.'
+          ),
+        ],
+        flags: [MessageFlags.Ephemeral, MessageFlags.IsComponentsV2],
+      });
+      return;
+    }
+
     await interaction.reply({
       components: [addAccountContainer()],
       flags: [MessageFlags.Ephemeral, MessageFlags.IsComponentsV2],

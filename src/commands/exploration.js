@@ -10,6 +10,14 @@ import { getCachedCardDetail } from '#/skport/utils/getCachedCardDetail.js';
 import { createComponentId } from '#/utils/componentId.js';
 import { BotConfig } from '#/config';
 
+const AUTOCOMPLETE_VALUES = {
+  NO_USER: '__no_user__',
+  USER_NOT_FOUND: '__user_not_found__',
+  USER_BANNED: '__user_banned__',
+  USER_PRIVATE: '__user_private__',
+  NO_ACCOUNTS: '__no_accounts__',
+};
+
 const explorationSelectMenuInteractions = {
   domain: { ownerOnly: true, execute: handleExplorationDomainSelect },
 };
@@ -35,34 +43,84 @@ export default {
     .setContexts([0, 1, 2]),
   /** @param {import("discord.js").AutocompleteInteraction} interaction */
   async autocomplete(interaction) {
-    const focusedOptions = interaction.options.getFocused(true);
-    const userId = interaction.options.get('user')?.value || interaction.user.id;
+    const focused = interaction.options.getFocused(true);
+    const targetUserId = interaction.options.get('user')?.value;
+    const userId = targetUserId || interaction.user.id;
     if (!userId || typeof userId !== 'string') {
-      await interaction.respond([{ name: 'No user found', value: '-999' }]);
-      return;
+      return interaction.respond([{ name: 'No user found', value: AUTOCOMPLETE_VALUES.NO_USER }]);
+    }
+
+    const isTargetingOtherUser = targetUserId && targetUserId !== interaction.user.id;
+    if (isTargetingOtherUser) {
+      const user = await Users.getByDcid(userId);
+      if (!user) {
+        return interaction.respond([
+          { name: 'User not found', value: AUTOCOMPLETE_VALUES.USER_NOT_FOUND },
+        ]);
+      }
+      if (user.isBanned) {
+        return interaction.respond([
+          { name: 'User is banned.', value: AUTOCOMPLETE_VALUES.USER_BANNED },
+        ]);
+      }
+      if (user.isPrivate)
+        return interaction.respond([
+          { name: 'That user is private.', value: AUTOCOMPLETE_VALUES.USER_PRIVATE },
+        ]);
     }
 
     const accounts = await Accounts.getByDcid(userId);
-    if (!accounts || accounts.length === 0) {
-      await interaction.respond([{ name: 'No accounts found', value: '-999' }]);
-      return;
+    const visibleAccounts = isTargetingOtherUser
+      ? (accounts ?? []).filter((a) => !a.isPrivate)
+      : (accounts ?? []);
+    if (!visibleAccounts.length) {
+      return interaction.respond([
+        { name: 'No accounts found', value: AUTOCOMPLETE_VALUES.NO_ACCOUNTS },
+      ]);
     }
 
-    const filtered = accounts
-      .filter((a) => a.nickname.toLowerCase().includes(focusedOptions.value.toLowerCase()))
-      .slice(0, 25);
+    const query = focused.value.toLowerCase();
+    const choices = visibleAccounts
+      .filter((a) => a.nickname.toLowerCase().includes(query))
+      .slice(0, 25)
+      .map((a) => ({ name: `${a.nickname} (${a.roleId})`, value: a.id }));
 
-    await interaction.respond(
-      filtered.map((a) => ({ name: `${a.nickname} (${a.roleId})`, value: a.id }))
-    );
+    return interaction.respond(choices);
   },
   /** @param {import("discord.js").ChatInputCommandInteraction} interaction */
   async execute(interaction) {
     const targetUser = interaction.options.getUser('user');
     const targetAccount = interaction.options.getString('account');
+    const isTargetingOtherUser = !!targetUser && targetUser.id !== interaction.user.id;
+
+    if (isTargetingOtherUser) {
+      switch (targetAccount) {
+        case AUTOCOMPLETE_VALUES.NO_USER:
+        case AUTOCOMPLETE_VALUES.USER_NOT_FOUND:
+        case AUTOCOMPLETE_VALUES.USER_BANNED:
+          await interaction.reply({
+            components: [errorContainer('User not found or banned.')],
+            flags: [MessageFlags.Ephemeral, MessageFlags.IsComponentsV2],
+          });
+          return;
+        case AUTOCOMPLETE_VALUES.USER_PRIVATE:
+          await interaction.reply({
+            components: [errorContainer('That user is private.')],
+            flags: [MessageFlags.Ephemeral, MessageFlags.IsComponentsV2],
+          });
+          return;
+        case AUTOCOMPLETE_VALUES.NO_ACCOUNTS:
+          await interaction.reply({
+            components: [errorContainer('That user has no linked accounts.')],
+            flags: [MessageFlags.Ephemeral, MessageFlags.IsComponentsV2],
+          });
+          return;
+      }
+    }
 
     const dcid = targetUser?.id || interaction.user.id;
     const accounts = await Accounts.getByDcid(dcid);
+    const user = await Users.getByDcid(dcid);
 
     if (!accounts?.length) {
       await interaction.reply({
@@ -78,6 +136,22 @@ export default {
       return;
     }
 
+    if (!user || user.isBanned) {
+      await interaction.reply({
+        components: [errorContainer('User not found or banned.')],
+        flags: [MessageFlags.Ephemeral, MessageFlags.IsComponentsV2],
+      });
+      return;
+    }
+
+    if (isTargetingOtherUser && user.isPrivate) {
+      await interaction.reply({
+        components: [errorContainer('That user is private.')],
+        flags: [MessageFlags.Ephemeral, MessageFlags.IsComponentsV2],
+      });
+      return;
+    }
+
     const account = targetAccount
       ? accounts.find((a) => a.id === targetAccount)
       : resolveAccount(accounts, 0);
@@ -88,18 +162,9 @@ export default {
       });
       return;
     }
-    if (account.isPrivate) {
+    if (isTargetingOtherUser && account.isPrivate) {
       await interaction.reply({
         components: [errorContainer('That account is private.')],
-        flags: [MessageFlags.Ephemeral, MessageFlags.IsComponentsV2],
-      });
-      return;
-    }
-
-    const user = await Users.getByDcid(dcid);
-    if (!user) {
-      await interaction.reply({
-        components: [errorContainer('Please add an account with `/add account` to continue.')],
         flags: [MessageFlags.Ephemeral, MessageFlags.IsComponentsV2],
       });
       return;
