@@ -1,17 +1,15 @@
 import { AttachmentBuilder } from 'discord.js';
 import { createCanvas, loadImage } from '@napi-rs/canvas';
 
-/** @typedef {import('../skport/api/profile/cardDetail.js').Characters} Characters */
-/** @typedef {import('../skport/api/profile/cardDetail.js').Weapon} Weapon */
-/** @typedef {import('../skport/api/profile/cardDetail.js').UserSkillData} UserSkillData */
-/** @typedef {import('../skport/api/profile/cardDetail.js').SkillData} SkillData */
+/** @typedef {import('#/types/skport/profile.js').Characters} Characters */
+/** @typedef {import('#/types/skport/profile.js').Weapon} Weapon */
+/** @typedef {import('#/types/skport/profile.js').UserSkillData} UserSkillData */
+/** @typedef {import('#/types/skport/profile.js').SkillData} SkillData */
 /** @typedef {import('@napi-rs/canvas').SKRSContext2D} SKRSContext2D */
 
 // --- Assets & layout ---
 const BACKGROUND_URL = 'https://static.skport.com/asset/game/6ede1f8bf4dfc5797e283332401b222c.png';
 
-const FONT_LG = 30;
-const FONT_MD = 24;
 const FONT_BASE = 20;
 const FONT_SM = 16;
 const FONT_XS = 14;

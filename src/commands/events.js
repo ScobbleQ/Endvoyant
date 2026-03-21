@@ -10,7 +10,7 @@ import { Events as DbEvents } from '#/db/index.js';
 import { getCachedEnrichedEvents } from '#/skport/utils/getCachedEvents.js';
 import { BotConfig } from '#/config';
 
-/** @typedef {import('../skport/utils/getCachedEvents.js').CachedBulletinEvent} CachedBulletinEvent */
+/** @typedef {import('#/types/skport/game.js').CachedBulletinEvent} CachedBulletinEvent */
 
 const EVENTS_PER_PAGE = 5;
 const MAX_BODY_LENGTH = 3800;

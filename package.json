@@ -23,7 +23,8 @@
   "imports": {
     "#/*": "./src/*",
     "#/config": "./config.js",
-    "#/logger": "./src/utils/logger.js"
+    "#/logger": "./src/utils/logger.js",
+    "#/types/*": "./src/types/*.js"
   },
   "scripts": {
     "test": "echo \"Error: no test specified\" && exit 1",

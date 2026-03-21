@@ -1,4 +1,6 @@
 import * as Constants from './constants.js';
+/** @typedef {import('#/types/skport/utils.js').ConstantValue} ConstantValue */
+/** @typedef {import('#/types/skport/utils.js').ResolvedSubType} ResolvedSubType */
 
 // prettier-ignore
 export const TagTree = Object.freeze({
@@ -9,21 +11,6 @@ export const TagTree = Object.freeze({
   "10219": Constants.Faction,
   "10207": Constants.WeaponType
 });
-
-/**
- * @typedef {Object} ConstantValue
- * @property {string} id
- * @property {string} name
- * @property {string} [value]
- */
-
-/**
- * @typedef {Object} ResolvedSubType
- * @property {string} category - The category name (e.g., 'rarity', 'elementType')
- * @property {string} id
- * @property {string} name
- * @property {string} [value]
- */
 
 /**
  * Resolves a single stat from subTypeId and value

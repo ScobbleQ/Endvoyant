@@ -35,7 +35,7 @@ const containerContext = (dcid, viewerId, account) => ({
 });
 
 /**
- * @param {import('../skport/api/profile/cardDetail.js').CardDetail['domain']} domains
+ * @param {import('#/types/skport/profile.js').CardDetail['domain']} domains
  * @param {number} domainIndex
  * @param {{ shortId?: number; dcid?: string }} context
  */

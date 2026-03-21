@@ -1,27 +1,6 @@
 import UserAgent from 'user-agents';
 import { computeSign } from '#/skport/utils/computeSign.js';
-
-/**
- * @typedef {Object} PlayerBinding
- * @property {string} appCode
- * @property {string} appName
- * @property {boolean} supportMultiServer
- * @property {PlayerBindingList[]} bindingList
- */
-
-/**
- * @typedef {Object} PlayerBindingList
- * @property {string} uid
- * @property {boolean} isOfficial
- * @property {boolean} isDefault
- * @property {string} channelMasterId
- * @property {string} channelName
- * @property {boolean} isDelete
- * @property {string} gameName
- * @property {number} gameId
- * @property {{ serverId: string, roleId: string, nickname: string, level: number, isDefault: boolean, isBanned: boolean, serverType: string, serverName: string }[]} roles
- * @property {{ serverId: string, roleId: string, nickname: string, level: number, isDefault: boolean, isBanned: boolean, serverType: string, serverName: string }} defaultRole
- */
+/** @typedef {import('#/types/skport/profile.js').PlayerBinding} PlayerBinding */
 
 /**
  * Get the binding list from the API

@@ -1,23 +1,9 @@
 import { getBulletin, getBulletinDetail } from '#/skport/api/index.js';
 import { getOrCreateCache, getOrSet } from './cache.js';
 
-/** @typedef {import('../api/game/bulletin.js').Bulletin} Bulletin */
-/** @typedef {import('../api/game/bulletinDetail.js').BulletinDetail} BulletinDetail */
-
-/**
- * Merged list + detail fields for one bulletin row (cached as a batch in `getCachedEnrichedEvents`).
- * @typedef {Object} CachedBulletinEvent
- * @property {string} cid
- * @property {string} header
- * @property {string} html
- * @property {number} linkType
- * @property {string} title
- * @property {number} startAt
- * @property {string} version
- * @property {number} [onlineVersion]
- * @property {string} [topicCid]
- * @property {string} [topicKey]
- */
+/** @typedef {import('#/types/skport/game.js').Bulletin} Bulletin */
+/** @typedef {import('#/types/skport/game.js').BulletinDetail} BulletinDetail */
+/** @typedef {import('#/types/skport/game.js').CachedBulletinEvent} CachedBulletinEvent */
 
 const EVENTS_TTL = 1 * 60 * 60 * 1000; // 1 hour
 const eventsCache = getOrCreateCache('events', EVENTS_TTL);

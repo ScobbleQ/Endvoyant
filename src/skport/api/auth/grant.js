@@ -1,8 +1,10 @@
 import logger from '#/logger';
-
-/**
- * @typedef { '6eb76d4e13aa36e6' | '3dacefa138426cfe' | 'd9f6dbb6bbd6bb33' | '973bd727dd11cbb6ead8' } AppCode
- */
+/** @typedef {import('#/types/skport/auth.js').AppCode} AppCode */
+/** @typedef {import('#/types/skport/auth.js').AppCodeType0} AppCodeType0 */
+/** @typedef {import('#/types/skport/auth.js').AppCodeType1} AppCodeType1 */
+/** @typedef {import('#/types/skport/auth.js').OAuthError} OAuthError */
+/** @typedef {import('#/types/skport/auth.js').OAuthType0} OAuthType0 */
+/** @typedef {import('#/types/skport/auth.js').OAuthType1} OAuthType1 */
 
 const APP_TYPE = {
   '6eb76d4e13aa36e6': 0,
@@ -10,20 +12,6 @@ const APP_TYPE = {
   '973bd727dd11cbb6ead8': 0,
   '3dacefa138426cfe': 1,
 };
-
-/** @typedef {{ status: -1, msg: string, timestamp: string }} OAuthError */
-/** @typedef {{ status: 0, data: { uid: string, code: string } }} OAuthType0 */
-/** @typedef {{ status: 0, data: { token: string, hgId: string } }} OAuthType1 */
-
-/**
- * Type 0 OAuth:
- * @typedef {'6eb76d4e13aa36e6' | 'd9f6dbb6bbd6bb33' | '973bd727dd11cbb6ead8'} AppCodeType0
- */
-
-/**
- * Type 1 OAuth:
- * @typedef {'3dacefa138426cfe'} AppCodeType1
- */
 
 /**
  * @overload

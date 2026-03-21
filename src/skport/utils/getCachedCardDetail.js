@@ -3,7 +3,7 @@ import { generateCredByCode, grantOAuth } from '../api/auth/index.js';
 import { cardDetail } from '../api/profile/index.js';
 import { getOrCreateCache, getOrSet } from './cache.js';
 
-/** @typedef {import('../api/profile/cardDetail.js').CardDetail} CardDetail */
+/** @typedef {import('#/types/skport/profile.js').CardDetail} CardDetail */
 
 const CARD_DETAIL_TTL = 30 * 60 * 1000; // 30 minutes
 const cardDetailCache = getOrCreateCache('card-detail', CARD_DETAIL_TTL);

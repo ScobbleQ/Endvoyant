@@ -1,19 +1,5 @@
 import logger from '#/logger';
-
-/**
- * @typedef {Object} Bulletin
- * @property {string} channel
- * @property {string} key
- * @property {string} lang
- * @property {{ cid: string, needPopup: boolean, needRedDot: boolean, version: number }[]} onlineList
- * @property {string} platform
- * @property {string} server
- * @property {string} subChannel
- * @property {string} topicCid
- * @property {number} type
- * @property {number} updatedAt
- * @property {string} version
- */
+/** @typedef {import('#/types/skport/game.js').Bulletin} Bulletin */
 
 /**
  * @param {object} [options={}]

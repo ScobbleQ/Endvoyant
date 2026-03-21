@@ -16,7 +16,7 @@ import { getMaxLevel, getBreakthroughLevel } from '#/utils/game.js';
 import { generateCharacterBuild } from '#/utils/generateCharacterBuild.js';
 import { BotConfig } from '#/config';
 
-/** @typedef {import('../skport/api/profile/cardDetail.js').Characters} Characters */
+/** @typedef {import('#/types/skport/profile.js').Characters} Characters */
 
 const CHARS_PER_PAGE = 5;
 const INITIAL_STATE = {

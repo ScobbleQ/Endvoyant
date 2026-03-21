@@ -9,7 +9,9 @@
     "paths": {
       "#/*": ["src/*"],
       "#/config": ["config.js"],
-      "#/logger": ["src/utils/logger.js"]
+      "#/logger": ["src/utils/logger.js"],
+      "#/types/*": ["src/types/*"],
+      "user-agents": ["src/types/vendor/user-agents.d.ts"]
     },
     "module": "NodeNext",
     "moduleResolution": "NodeNext",
