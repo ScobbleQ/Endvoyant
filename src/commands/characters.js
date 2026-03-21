@@ -606,7 +606,7 @@ const buildCatalogContainer = (chars, { page, profession, element, rarity, short
           .setStyle(clampedPage === 0 ? ButtonStyle.Secondary : ButtonStyle.Success)
           .setDisabled(clampedPage === 0),
         new ButtonBuilder()
-          .setCustomId(createComponentId('characters', 'page', stateStr))
+          .setCustomId(createComponentId('characters', 'page', 'display'))
           .setLabel(`${clampedPage + 1} / ${totalPages}`)
           .setStyle(ButtonStyle.Secondary)
           .setDisabled(true),
