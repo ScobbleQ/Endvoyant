@@ -16,14 +16,12 @@ import { BotConfig } from '#/config';
 
 /** @type {Record<string, { ownerOnly: boolean, execute: (interaction: import("discord.js").ButtonInteraction) => Promise<void> }>} */
 const surveyButtonInteractions = {
-  account: { ownerOnly: true, execute: showAccountSurveyModal },
-  suggestions: { ownerOnly: true, execute: showSuggestionsSurveyModal },
-  image: { ownerOnly: true, execute: showImageSurveyModal },
+  suggestions: { ownerOnly: false, execute: showSuggestionsSurveyModal },
+  image: { ownerOnly: false, execute: showImageSurveyModal },
 };
 
 /** @type {Record<string, (interaction: import("discord.js").ModalSubmitInteraction) => Promise<void>>} */
 const surveyModalInteractions = {
-  account: submitAccountSurvey,
   suggestions: submitSuggestionsSurvey,
   image: submitImageSurvey,
 };
@@ -100,40 +98,6 @@ export default {
 };
 
 /** @param {import("discord.js").ButtonInteraction} interaction */
-async function showAccountSurveyModal(interaction) {
-  const modal = new ModalBuilder()
-    .setCustomId(createComponentId('survey', 'account'))
-    .setTitle('Survey: Multiple Accounts');
-
-  const accountInput = new TextInputBuilder()
-    .setCustomId('account')
-    .setStyle(TextInputStyle.Short)
-    .setPlaceholder('e.g. Yes')
-    .setRequired(true);
-
-  const accountLabel = new LabelBuilder()
-    .setLabel('Want multiple account linking?')
-    .setDescription(
-      'Would you want to link more than one Endfield account (e.g. alts) to this Discord? Yes or no.'
-    )
-    .setTextInputComponent(accountInput);
-
-  const accountScaleInput = new TextInputBuilder()
-    .setCustomId('scale')
-    .setStyle(TextInputStyle.Short)
-    .setPlaceholder('1-10')
-    .setRequired(true);
-
-  const accountScaleLabel = new LabelBuilder()
-    .setLabel('Impact (1-10)')
-    .setDescription('How much would linking multiple Endfield accounts improve your experience?')
-    .setTextInputComponent(accountScaleInput);
-
-  modal.addLabelComponents(accountLabel, accountScaleLabel);
-  await interaction.showModal(modal);
-}
-
-/** @param {import("discord.js").ButtonInteraction} interaction */
 async function showSuggestionsSurveyModal(interaction) {
   const modal = new ModalBuilder()
     .setCustomId(createComponentId('survey', 'suggestions'))
@@ -197,17 +161,6 @@ async function showImageSurveyModal(interaction) {
 
   modal.addLabelComponents(imageLabel, imageScaleLabel);
   await interaction.showModal(modal);
-}
-
-/** @param {import("discord.js").ModalSubmitInteraction} interaction */
-async function submitAccountSurvey(interaction) {
-  await sendSurveyResponse(interaction, 'account', [
-    { label: 'Scale', value: interaction.fields.getTextInputValue('scale') },
-    {
-      label: 'Multiple Accounts',
-      value: interaction.fields.getTextInputValue('account'),
-    },
-  ]);
 }
 
 /** @param {import("discord.js").ModalSubmitInteraction} interaction */

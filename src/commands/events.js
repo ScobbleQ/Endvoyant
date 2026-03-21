@@ -11,17 +11,162 @@ import { getCachedEnrichedEvents } from '#/skport/utils/getCachedEvents.js';
 import { createComponentId } from '#/utils/componentId.js';
 import { BotConfig } from '#/config';
 
+/** @typedef {import('#/types/skport/game.js').CachedBulletinEvent} CachedBulletinEvent */
+
+const EVENTS_PER_PAGE = 5;
+const MAX_BODY_LENGTH = 3800;
+const MEDIA_GALLERY_MAX_ITEMS = 10;
+
 const eventButtonInteractions = {
   catalog: showEventsCatalog,
   page: showEventsCatalog,
   view: showEventDetail,
 };
 
-/** @typedef {import('#/types/skport/game.js').CachedBulletinEvent} CachedBulletinEvent */
+export default {
+  data: new SlashCommandBuilder()
+    .setName('events')
+    .setDescription('Browse in-game news and events')
+    .addStringOption((option) =>
+      option
+        .setName('name')
+        .setDescription('Jump to a specific event')
+        .setAutocomplete(true)
+        .setRequired(false)
+    )
+    .setIntegrationTypes([0, 1])
+    .setContexts([0, 1, 2]),
 
-const EVENTS_PER_PAGE = 5;
-const MAX_BODY_LENGTH = 3800;
-const MEDIA_GALLERY_MAX_ITEMS = 10;
+  /** @param {import("discord.js").AutocompleteInteraction} interaction */
+  async autocomplete(interaction) {
+    const focusedOption = interaction.options.getFocused(true);
+    const events = await getCachedEnrichedEvents();
+
+    if (!events || events.status !== 0) {
+      await interaction.respond([{ name: 'Failed to load events', value: '-999' }]);
+      return;
+    }
+
+    const search = focusedOption.value.toLowerCase();
+
+    const filtered = events.data
+      .filter((e) => {
+        const header = e.header;
+        return header && header.toLowerCase().includes(search);
+      })
+      .slice(0, 25);
+
+    await interaction.respond(filtered.map((e) => ({ name: e.header, value: e.cid })));
+  },
+
+  /** @param {import("discord.js").ChatInputCommandInteraction} interaction */
+  async execute(interaction) {
+    const eventCid = interaction.options.getString('name');
+    await interaction.deferReply();
+
+    const enriched = await getCachedEnrichedEvents();
+    if (!enriched || enriched.status !== 0) {
+      await interaction.editReply({
+        components: [errorContainer(getEnrichedError(enriched) ?? 'Failed to load events')],
+        flags: [MessageFlags.IsComponentsV2],
+      });
+      return;
+    }
+
+    const list = enriched.data;
+    const byCid = enriched.byCid;
+
+    if (BotConfig.environment === 'production') {
+      await DbEvents.create(interaction.user.id, {
+        source: 'slash',
+        action: 'events',
+      });
+    }
+
+    if (eventCid) {
+      if (eventCid === '-999') {
+        await interaction.editReply({
+          components: [errorContainer('Invalid selection.')],
+          flags: [MessageFlags.IsComponentsV2],
+        });
+        return;
+      }
+      const ev = byCid[eventCid];
+      if (!ev) {
+        await interaction.editReply({
+          components: [errorContainer('Event not found.')],
+          flags: [MessageFlags.IsComponentsV2],
+        });
+        return;
+      }
+      const idx = list.findIndex((e) => e.cid === eventCid);
+      const catalogPage = idx >= 0 ? Math.floor(idx / EVENTS_PER_PAGE) : 0;
+      await interaction.editReply({
+        components: [buildEventDetailContainer(ev, catalogPage)],
+        flags: [MessageFlags.IsComponentsV2],
+      });
+      return;
+    }
+
+    await interaction.editReply({
+      components: [buildCatalogContainer(list, 0)],
+      flags: [MessageFlags.IsComponentsV2],
+    });
+  },
+  interactions: {
+    button: eventButtonInteractions,
+  },
+};
+
+/**
+ * @param {import("discord.js").ButtonInteraction} interaction
+ * @param {string} [pageStr]
+ */
+async function showEventsCatalog(interaction, pageStr) {
+  await interaction.deferUpdate();
+
+  const enriched = await getCachedEnrichedEvents();
+  if (!enriched || enriched.status !== 0) {
+    await interaction.editReply({
+      components: [errorContainer(getEnrichedError(enriched) ?? 'Failed to load events')],
+      flags: [MessageFlags.IsComponentsV2],
+    });
+    return;
+  }
+
+  const page = Math.max(0, parseInt(pageStr ?? '0', 10) || 0);
+  await interaction.editReply({
+    components: [buildCatalogContainer(enriched.data, page)],
+    flags: [MessageFlags.IsComponentsV2],
+  });
+}
+
+/**
+ * @param {import("discord.js").ButtonInteraction} interaction
+ * @param {string} cid
+ * @param {string} [catalogPageStr]
+ */
+async function showEventDetail(interaction, cid, catalogPageStr) {
+  await interaction.deferUpdate();
+
+  const enriched = await getCachedEnrichedEvents();
+  if (!enriched || enriched.status !== 0) {
+    await interaction.editReply({
+      components: [errorContainer(getEnrichedError(enriched) ?? 'Failed to load events')],
+      flags: [MessageFlags.IsComponentsV2],
+    });
+    return;
+  }
+
+  const catalogPage = Math.max(0, parseInt(catalogPageStr ?? '0', 10) || 0);
+  const ev = enriched.byCid[cid];
+  await interaction.editReply({
+    components: ev
+      ? [buildEventDetailContainer(ev, catalogPage)]
+      : [errorContainer('Event no longer available.')],
+    flags: [MessageFlags.IsComponentsV2],
+  });
+}
 
 /** @param {string} s */
 function decodeHtmlEntities(s) {
@@ -226,149 +371,4 @@ function getEnrichedError(enriched) {
     return enriched?.msg ?? 'Failed to load events';
   }
   return null;
-}
-
-export default {
-  data: new SlashCommandBuilder()
-    .setName('events')
-    .setDescription('Browse in-game news and events')
-    .addStringOption((option) =>
-      option
-        .setName('name')
-        .setDescription('Jump to a specific event')
-        .setAutocomplete(true)
-        .setRequired(false)
-    )
-    .setIntegrationTypes([0, 1])
-    .setContexts([0, 1, 2]),
-
-  /** @param {import("discord.js").AutocompleteInteraction} interaction */
-  async autocomplete(interaction) {
-    const focusedOption = interaction.options.getFocused(true);
-    const events = await getCachedEnrichedEvents();
-
-    if (!events || events.status !== 0) {
-      await interaction.respond([{ name: 'Failed to load events', value: '-999' }]);
-      return;
-    }
-
-    const search = focusedOption.value.toLowerCase();
-
-    const filtered = events.data
-      .filter((e) => {
-        const header = e.header;
-        return header && header.toLowerCase().includes(search);
-      })
-      .slice(0, 25);
-
-    await interaction.respond(filtered.map((e) => ({ name: e.header, value: e.cid })));
-  },
-
-  /** @param {import("discord.js").ChatInputCommandInteraction} interaction */
-  async execute(interaction) {
-    const eventCid = interaction.options.getString('name');
-    await interaction.deferReply();
-
-    const enriched = await getCachedEnrichedEvents();
-    if (!enriched || enriched.status !== 0) {
-      await interaction.editReply({
-        components: [errorContainer(getEnrichedError(enriched) ?? 'Failed to load events')],
-        flags: [MessageFlags.IsComponentsV2],
-      });
-      return;
-    }
-
-    const list = enriched.data;
-    const byCid = enriched.byCid;
-
-    if (BotConfig.environment === 'production') {
-      await DbEvents.create(interaction.user.id, {
-        source: 'slash',
-        action: 'events',
-      });
-    }
-
-    if (eventCid) {
-      if (eventCid === '-999') {
-        await interaction.editReply({
-          components: [errorContainer('Invalid selection.')],
-          flags: [MessageFlags.IsComponentsV2],
-        });
-        return;
-      }
-      const ev = byCid[eventCid];
-      if (!ev) {
-        await interaction.editReply({
-          components: [errorContainer('Event not found.')],
-          flags: [MessageFlags.IsComponentsV2],
-        });
-        return;
-      }
-      const idx = list.findIndex((e) => e.cid === eventCid);
-      const catalogPage = idx >= 0 ? Math.floor(idx / EVENTS_PER_PAGE) : 0;
-      await interaction.editReply({
-        components: [buildEventDetailContainer(ev, catalogPage)],
-        flags: [MessageFlags.IsComponentsV2],
-      });
-      return;
-    }
-
-    await interaction.editReply({
-      components: [buildCatalogContainer(list, 0)],
-      flags: [MessageFlags.IsComponentsV2],
-    });
-  },
-  interactions: {
-    button: eventButtonInteractions,
-  },
-};
-
-/**
- * @param {import("discord.js").ButtonInteraction} interaction
- * @param {string} [pageStr]
- */
-async function showEventsCatalog(interaction, pageStr) {
-  await interaction.deferUpdate();
-
-  const enriched = await getCachedEnrichedEvents();
-  if (!enriched || enriched.status !== 0) {
-    await interaction.editReply({
-      components: [errorContainer(getEnrichedError(enriched) ?? 'Failed to load events')],
-      flags: [MessageFlags.IsComponentsV2],
-    });
-    return;
-  }
-
-  const page = Math.max(0, parseInt(pageStr ?? '0', 10) || 0);
-  await interaction.editReply({
-    components: [buildCatalogContainer(enriched.data, page)],
-    flags: [MessageFlags.IsComponentsV2],
-  });
-}
-
-/**
- * @param {import("discord.js").ButtonInteraction} interaction
- * @param {string} cid
- * @param {string} [catalogPageStr]
- */
-async function showEventDetail(interaction, cid, catalogPageStr) {
-  await interaction.deferUpdate();
-
-  const enriched = await getCachedEnrichedEvents();
-  if (!enriched || enriched.status !== 0) {
-    await interaction.editReply({
-      components: [errorContainer(getEnrichedError(enriched) ?? 'Failed to load events')],
-      flags: [MessageFlags.IsComponentsV2],
-    });
-    return;
-  }
-
-  const catalogPage = Math.max(0, parseInt(catalogPageStr ?? '0', 10) || 0);
-  const ev = enriched.byCid[cid];
-  await interaction.editReply({
-    components: ev
-      ? [buildEventDetailContainer(ev, catalogPage)]
-      : [errorContainer('Event no longer available.')],
-    flags: [MessageFlags.IsComponentsV2],
-  });
 }

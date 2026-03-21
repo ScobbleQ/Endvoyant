@@ -33,6 +33,8 @@ const INITIAL_STATE = {
   shortId: 0,
 };
 
+const notFoundImage = new AttachmentBuilder('assets/images/pensive.png');
+
 const characterButtonInteractions = {
   catalog: { ownerOnly: true, execute: showCharactersCatalog },
   view: { ownerOnly: true, execute: showCharacterDetail },
@@ -45,11 +47,285 @@ const characterSelectMenuInteractions = {
   filter: { ownerOnly: true, execute: filterCharactersSelectMenu },
 };
 
+export default {
+  data: new SlashCommandBuilder()
+    .setName('characters')
+    .setDescription('View all your obtained operators')
+    .addStringOption((option) =>
+      option
+        .setName('account')
+        .setDescription('The account to view the characters of')
+        .setAutocomplete(true)
+        .setRequired(false)
+    )
+    .addStringOption((option) =>
+      option.setName('name').setDescription('The name of the character').setAutocomplete(true)
+    )
+    .setIntegrationTypes([0, 1])
+    .setContexts([0, 1, 2]),
+
+  /** @param {import('discord.js').AutocompleteInteraction} interaction */
+  async autocomplete(interaction) {
+    const focusedOption = interaction.options.getFocused(true);
+
+    if (focusedOption.name === 'account') {
+      const accounts = await Accounts.getByDcid(interaction.user.id);
+      if (!accounts || accounts.length === 0) {
+        await interaction.respond([{ name: 'No accounts found', value: '-999' }]);
+        return;
+      }
+
+      const filtered = accounts
+        .filter((a) => a.nickname.toLowerCase().includes(focusedOption.value.toLowerCase()))
+        .slice(0, 25);
+
+      await interaction.respond(
+        filtered.map((a) => ({ name: `${a.nickname} (${a.roleId})`, value: String(a.shortId) }))
+      );
+      return;
+    }
+
+    if (focusedOption.name === 'name') {
+      const accounts = await Accounts.getByDcid(interaction.user.id);
+      if (!accounts?.length) {
+        await interaction.respond([{ name: 'No accounts found', value: '-999' }]);
+        return;
+      }
+
+      const account = resolveAccount(accounts, interaction.options.getString('account'));
+      if (!account) {
+        await interaction.respond([{ name: 'Account not found', value: '-999' }]);
+        return;
+      }
+
+      const characters = await getCharacters(interaction.user.id, account.id);
+      if (!characters || characters.status !== 0) {
+        const { code, msg } = parseErrorMsg(characters);
+        await interaction.respond([{ name: `[${code}] ${msg}`, value: '-999' }]);
+        return;
+      }
+
+      const filtered = characters.data
+        .filter((c) => c.charData.name.toLowerCase().includes(focusedOption.value.toLowerCase()))
+        .slice(0, 25);
+
+      await interaction.respond(
+        filtered.map((c) => ({ name: c.charData.name, value: c.charData.id }))
+      );
+    }
+  },
+  /** @param {import('discord.js').ChatInputCommandInteraction} interaction */
+  async execute(interaction) {
+    const selected = interaction.options.getString('name');
+    const targetAccount = interaction.options.getString('account');
+    await interaction.deferReply();
+
+    const accounts = await Accounts.getByDcid(interaction.user.id);
+    if (!accounts?.length) {
+      await interaction.editReply({
+        components: [errorContainer('Please add an account with `/add account` to continue.')],
+        flags: [MessageFlags.IsComponentsV2],
+      });
+      return;
+    }
+
+    const account = resolveAccount(accounts, targetAccount);
+
+    if (!account) {
+      await interaction.editReply({
+        components: [errorContainer('Account not found.')],
+        flags: [MessageFlags.IsComponentsV2],
+      });
+      return;
+    }
+
+    const characters = await getCharacters(interaction.user.id, account.id);
+    if (!characters || characters.status !== 0) {
+      const { code, msg } = parseErrorMsg(characters);
+      await interaction.editReply({
+        components: [errorContainer(`[${code}] ${msg}`)],
+        flags: [MessageFlags.IsComponentsV2],
+      });
+      return;
+    }
+
+    if (BotConfig.environment === 'production') {
+      await Events.create(interaction.user.id, {
+        source: 'slash',
+        action: 'characters',
+      });
+    }
+
+    if (selected) {
+      const character = characters.data.find((c) => c.charData.id === selected);
+      if (!character) {
+        await interaction.editReply({ components: [errorContainer('Character not found')] });
+        return;
+      }
+      const catalogStateStr = toStateStr({ ...INITIAL_STATE, shortId: account.shortId });
+      await interaction.editReply({
+        components: [buildCharacterContainer(character, catalogStateStr)],
+        flags: [MessageFlags.IsComponentsV2],
+      });
+      return;
+    }
+
+    await interaction.editReply({
+      components: [
+        buildCatalogContainer(characters.data, { ...INITIAL_STATE, shortId: account.shortId }),
+      ],
+      files: [notFoundImage],
+      flags: [MessageFlags.IsComponentsV2],
+    });
+  },
+  interactions: {
+    button: characterButtonInteractions,
+    selectMenu: characterSelectMenuInteractions,
+  },
+};
+
+/** @param {import('discord.js').ButtonInteraction} interaction @param {string} [stateStr] */
+async function showCharactersCatalog(interaction, stateStr) {
+  await interaction.deferUpdate();
+
+  const state = stateStr ? parseState(stateStr) : INITIAL_STATE;
+  const characters = await getCharactersForInteraction(interaction, state.shortId);
+  if (!characters || characters.status !== 0) {
+    await charactersErrorReply(interaction, characters);
+    return;
+  }
+
+  const container = buildCatalogContainer(characters.data, state);
+  await interaction.editReply({ components: [container], files: [notFoundImage] });
+}
+
+/**
+ * @param {import('discord.js').ButtonInteraction} interaction
+ * @param {string} charId
+ * @param {string} [catalogStateStr]
+ */
+async function showCharacterDetail(interaction, charId, catalogStateStr) {
+  await interaction.deferUpdate();
+
+  const state = catalogStateStr ? parseState(catalogStateStr) : INITIAL_STATE;
+  const characters = await getCharactersForInteraction(interaction, state.shortId);
+  if (!characters || characters.status !== 0) {
+    await charactersErrorReply(interaction, characters);
+    return;
+  }
+
+  const character = characters.data.find((c) => c.charData.id === charId);
+  if (!character) {
+    await interaction.editReply({ components: [errorContainer('Character not found')] });
+    return;
+  }
+
+  await interaction.editReply({
+    components: [buildCharacterContainer(character, catalogStateStr)],
+  });
+}
+
+/** @param {import('discord.js').ButtonInteraction} interaction @param {string} stateStr */
+async function showCharactersPage(interaction, stateStr) {
+  await interaction.deferUpdate();
+
+  const state = parseState(stateStr);
+  const characters = await getCharactersForInteraction(interaction, state.shortId);
+  if (!characters || characters.status !== 0) {
+    await charactersErrorReply(interaction, characters);
+    return;
+  }
+
+  const container = buildCatalogContainer(characters.data, state);
+  await interaction.editReply({ components: [container], files: [notFoundImage] });
+}
+
+/**
+ * @param {import('discord.js').ButtonInteraction} interaction
+ * @param {string} rarity
+ * @param {string} stateStr
+ */
+async function filterCharactersByRarity(interaction, rarity, stateStr) {
+  await interaction.deferUpdate();
+
+  const baseState = parseState(stateStr);
+  const characters = await getCharactersForInteraction(interaction, baseState.shortId);
+  if (!characters || characters.status !== 0) {
+    await charactersErrorReply(interaction, characters);
+    return;
+  }
+
+  const state = {
+    ...baseState,
+    page: 0,
+    rarity: rarity === '*' ? 'all' : rarity,
+  };
+  const container = buildCatalogContainer(characters.data, state);
+  await interaction.editReply({ components: [container], files: [notFoundImage] });
+}
+
+/** @param {import('discord.js').ButtonInteraction} interaction @param {string} payload */
+async function generateCharacterImage(interaction, payload) {
+  await interaction.deferUpdate();
+
+  const [charId, sid] = payload.split(':');
+  const shortId = parseInt(sid ?? '0', 10) || 0;
+  const characters = await getCharactersForInteraction(interaction, shortId);
+  if (!characters || characters.status !== 0) {
+    await charactersErrorReply(interaction, characters);
+    return;
+  }
+
+  const character = characters.data.find((c) => c.charData.id === charId);
+  if (!character) {
+    await interaction.editReply({ components: [errorContainer('Character not found')] });
+    return;
+  }
+
+  const attachment = await generateCharacterBuild(interaction.user.id, character);
+  await interaction.followUp({ files: [attachment] });
+}
+
+/**
+ * @param {import('discord.js').StringSelectMenuInteraction} interaction
+ * @param {string} filterWhich
+ * @param {string} stateStr
+ */
+async function filterCharactersSelectMenu(interaction, filterWhich, stateStr) {
+  await interaction.deferUpdate();
+
+  const state = parseState(stateStr);
+  const selectedValue = interaction.values[0];
+  const profession = filterWhich === 'opclass' ? selectedValue : state.profession;
+  const element = filterWhich === 'element' ? selectedValue : state.element;
+
+  const characters = await getCharactersForInteraction(interaction, state.shortId);
+  if (!characters || characters.status !== 0) {
+    await charactersErrorReply(interaction, characters);
+    return;
+  }
+
+  const container = buildCatalogContainer(characters.data, {
+    page: 0,
+    profession,
+    element,
+    rarity: state.rarity ?? 'all',
+    shortId: state.shortId,
+  });
+  await interaction.editReply({ components: [container], files: [notFoundImage] });
+}
+
+/** @param {import('discord.js').MessageComponentInteraction} interaction @param {number} [shortId=0] */
+async function getCharactersForInteraction(interaction, shortId = 0) {
+  const aid = shortId
+    ? (await Accounts.getByDcidAndShortId(interaction.user.id, shortId))?.id
+    : undefined;
+  return getCharacters(interaction.user.id, aid);
+}
+
 /** @param {{ page: number, profession: string, element: string, rarity: string, shortId?: number }} state */
 const toStateStr = (state) =>
   `${state.page}:${state.profession}:${state.element}:${state.rarity}:${state.shortId ?? 0}`;
-
-const notFoundImage = new AttachmentBuilder('assets/images/pensive.png');
 
 /** @param {import('discord.js').MessageComponentInteraction} interaction @param {{ msg?: string } | null} result */
 const charactersErrorReply = (interaction, result) =>
@@ -461,279 +737,3 @@ const buildCharacterContainer = (character, catalogStateStr) => {
 
   return container;
 };
-
-export default {
-  data: new SlashCommandBuilder()
-    .setName('characters')
-    .setDescription('View all your obtained operators')
-    .addStringOption((option) =>
-      option
-        .setName('account')
-        .setDescription('The account to view the characters of')
-        .setAutocomplete(true)
-        .setRequired(false)
-    )
-    .addStringOption((option) =>
-      option.setName('name').setDescription('The name of the character').setAutocomplete(true)
-    )
-    .setIntegrationTypes([0, 1])
-    .setContexts([0, 1, 2]),
-
-  /** @param {import('discord.js').AutocompleteInteraction} interaction */
-  async autocomplete(interaction) {
-    const focusedOption = interaction.options.getFocused(true);
-
-    if (focusedOption.name === 'account') {
-      const accounts = await Accounts.getByDcid(interaction.user.id);
-      if (!accounts || accounts.length === 0) {
-        await interaction.respond([{ name: 'No accounts found', value: '-999' }]);
-        return;
-      }
-
-      const filtered = accounts
-        .filter((a) => a.nickname.toLowerCase().includes(focusedOption.value.toLowerCase()))
-        .slice(0, 25);
-
-      await interaction.respond(
-        filtered.map((a) => ({ name: `${a.nickname} (${a.roleId})`, value: String(a.shortId) }))
-      );
-      return;
-    }
-
-    if (focusedOption.name === 'name') {
-      const accounts = await Accounts.getByDcid(interaction.user.id);
-      if (!accounts?.length) {
-        await interaction.respond([{ name: 'No accounts found', value: '-999' }]);
-        return;
-      }
-
-      const account = resolveAccount(accounts, interaction.options.getString('account'));
-      if (!account) {
-        await interaction.respond([{ name: 'Account not found', value: '-999' }]);
-        return;
-      }
-
-      const characters = await getCharacters(interaction.user.id, account.id);
-      if (!characters || characters.status !== 0) {
-        const { code, msg } = parseErrorMsg(characters);
-        await interaction.respond([{ name: `[${code}] ${msg}`, value: '-999' }]);
-        return;
-      }
-
-      const filtered = characters.data
-        .filter((c) => c.charData.name.toLowerCase().includes(focusedOption.value.toLowerCase()))
-        .slice(0, 25);
-
-      await interaction.respond(
-        filtered.map((c) => ({ name: c.charData.name, value: c.charData.id }))
-      );
-    }
-  },
-  /** @param {import('discord.js').ChatInputCommandInteraction} interaction */
-  async execute(interaction) {
-    const selected = interaction.options.getString('name');
-    const targetAccount = interaction.options.getString('account');
-    await interaction.deferReply();
-
-    const accounts = await Accounts.getByDcid(interaction.user.id);
-    if (!accounts?.length) {
-      await interaction.editReply({
-        components: [errorContainer('Please add an account with `/add account` to continue.')],
-        flags: [MessageFlags.IsComponentsV2],
-      });
-      return;
-    }
-
-    const account = resolveAccount(accounts, targetAccount);
-
-    if (!account) {
-      await interaction.editReply({
-        components: [errorContainer('Account not found.')],
-        flags: [MessageFlags.IsComponentsV2],
-      });
-      return;
-    }
-
-    const characters = await getCharacters(interaction.user.id, account.id);
-    if (!characters || characters.status !== 0) {
-      const { code, msg } = parseErrorMsg(characters);
-      await interaction.editReply({
-        components: [errorContainer(`[${code}] ${msg}`)],
-        flags: [MessageFlags.IsComponentsV2],
-      });
-      return;
-    }
-
-    if (BotConfig.environment === 'production') {
-      await Events.create(interaction.user.id, {
-        source: 'slash',
-        action: 'characters',
-      });
-    }
-
-    if (selected) {
-      const character = characters.data.find((c) => c.charData.id === selected);
-      if (!character) {
-        await interaction.editReply({ components: [errorContainer('Character not found')] });
-        return;
-      }
-      const catalogStateStr = toStateStr({ ...INITIAL_STATE, shortId: account.shortId });
-      await interaction.editReply({
-        components: [buildCharacterContainer(character, catalogStateStr)],
-        flags: [MessageFlags.IsComponentsV2],
-      });
-      return;
-    }
-
-    await interaction.editReply({
-      components: [
-        buildCatalogContainer(characters.data, { ...INITIAL_STATE, shortId: account.shortId }),
-      ],
-      files: [notFoundImage],
-      flags: [MessageFlags.IsComponentsV2],
-    });
-  },
-  interactions: {
-    button: characterButtonInteractions,
-    selectMenu: characterSelectMenuInteractions,
-  },
-};
-
-/** @param {import('discord.js').MessageComponentInteraction} interaction @param {number} [shortId=0] */
-async function getCharactersForInteraction(interaction, shortId = 0) {
-  const aid = shortId
-    ? (await Accounts.getByDcidAndShortId(interaction.user.id, shortId))?.id
-    : undefined;
-  return getCharacters(interaction.user.id, aid);
-}
-
-/** @param {import('discord.js').ButtonInteraction} interaction @param {string} [stateStr] */
-async function showCharactersCatalog(interaction, stateStr) {
-  await interaction.deferUpdate();
-
-  const state = stateStr ? parseState(stateStr) : INITIAL_STATE;
-  const characters = await getCharactersForInteraction(interaction, state.shortId);
-  if (!characters || characters.status !== 0) {
-    await charactersErrorReply(interaction, characters);
-    return;
-  }
-
-  const container = buildCatalogContainer(characters.data, state);
-  await interaction.editReply({ components: [container], files: [notFoundImage] });
-}
-
-/**
- * @param {import('discord.js').ButtonInteraction} interaction
- * @param {string} charId
- * @param {string} [catalogStateStr]
- */
-async function showCharacterDetail(interaction, charId, catalogStateStr) {
-  await interaction.deferUpdate();
-
-  const state = catalogStateStr ? parseState(catalogStateStr) : INITIAL_STATE;
-  const characters = await getCharactersForInteraction(interaction, state.shortId);
-  if (!characters || characters.status !== 0) {
-    await charactersErrorReply(interaction, characters);
-    return;
-  }
-
-  const character = characters.data.find((c) => c.charData.id === charId);
-  if (!character) {
-    await interaction.editReply({ components: [errorContainer('Character not found')] });
-    return;
-  }
-
-  await interaction.editReply({
-    components: [buildCharacterContainer(character, catalogStateStr)],
-  });
-}
-
-/** @param {import('discord.js').ButtonInteraction} interaction @param {string} stateStr */
-async function showCharactersPage(interaction, stateStr) {
-  await interaction.deferUpdate();
-
-  const state = parseState(stateStr);
-  const characters = await getCharactersForInteraction(interaction, state.shortId);
-  if (!characters || characters.status !== 0) {
-    await charactersErrorReply(interaction, characters);
-    return;
-  }
-
-  const container = buildCatalogContainer(characters.data, state);
-  await interaction.editReply({ components: [container], files: [notFoundImage] });
-}
-
-/**
- * @param {import('discord.js').ButtonInteraction} interaction
- * @param {string} rarity
- * @param {string} stateStr
- */
-async function filterCharactersByRarity(interaction, rarity, stateStr) {
-  await interaction.deferUpdate();
-
-  const baseState = parseState(stateStr);
-  const characters = await getCharactersForInteraction(interaction, baseState.shortId);
-  if (!characters || characters.status !== 0) {
-    await charactersErrorReply(interaction, characters);
-    return;
-  }
-
-  const state = {
-    ...baseState,
-    page: 0,
-    rarity: rarity === '*' ? 'all' : rarity,
-  };
-  const container = buildCatalogContainer(characters.data, state);
-  await interaction.editReply({ components: [container], files: [notFoundImage] });
-}
-
-/** @param {import('discord.js').ButtonInteraction} interaction @param {string} payload */
-async function generateCharacterImage(interaction, payload) {
-  await interaction.deferUpdate();
-
-  const [charId, sid] = payload.split(':');
-  const shortId = parseInt(sid ?? '0', 10) || 0;
-  const characters = await getCharactersForInteraction(interaction, shortId);
-  if (!characters || characters.status !== 0) {
-    await charactersErrorReply(interaction, characters);
-    return;
-  }
-
-  const character = characters.data.find((c) => c.charData.id === charId);
-  if (!character) {
-    await interaction.editReply({ components: [errorContainer('Character not found')] });
-    return;
-  }
-
-  const attachment = await generateCharacterBuild(interaction.user.id, character);
-  await interaction.followUp({ files: [attachment] });
-}
-
-/**
- * @param {import('discord.js').StringSelectMenuInteraction} interaction
- * @param {string} filterWhich
- * @param {string} stateStr
- */
-async function filterCharactersSelectMenu(interaction, filterWhich, stateStr) {
-  await interaction.deferUpdate();
-
-  const state = parseState(stateStr);
-  const selectedValue = interaction.values[0];
-  const profession = filterWhich === 'opclass' ? selectedValue : state.profession;
-  const element = filterWhich === 'element' ? selectedValue : state.element;
-
-  const characters = await getCharactersForInteraction(interaction, state.shortId);
-  if (!characters || characters.status !== 0) {
-    await charactersErrorReply(interaction, characters);
-    return;
-  }
-
-  const container = buildCatalogContainer(characters.data, {
-    page: 0,
-    profession,
-    element,
-    rarity: state.rarity ?? 'all',
-    shortId: state.shortId,
-  });
-  await interaction.editReply({ components: [container], files: [notFoundImage] });
-}
