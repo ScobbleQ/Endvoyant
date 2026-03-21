@@ -36,7 +36,7 @@ export default {
     await interaction.deferReply();
 
     if (BotConfig.environment === 'production') {
-      await Events.create(interaction.user.id, {
+      await Events.create(user.dcid, {
         source: 'slash',
         action: 'redeem',
       });

@@ -6,20 +6,27 @@ import {
   SlashCommandBuilder,
 } from 'discord.js';
 import { errorContainer } from '#/components/index.js';
-import { Events as DbEvents } from '#/db/index.js';
+import { Events as DbEvents, Users } from '#/db/index.js';
 import { getCachedEnrichedEvents } from '#/skport/utils/getCachedEvents.js';
 import { createComponentId } from '#/utils/componentId.js';
 import { BotConfig } from '#/config';
 
 /** @typedef {import('#/types/skport/game.js').CachedBulletinEvent} CachedBulletinEvent */
+/** @typedef {CachedBulletinEvent['tab']} EventTab */
 
 const EVENTS_PER_PAGE = 5;
 const MAX_BODY_LENGTH = 3800;
 const MEDIA_GALLERY_MAX_ITEMS = 10;
+const EVENT_TABS = /** @type {const} */ (['all', 'events', 'updates', 'news']);
+const INITIAL_STATE = {
+  page: 0,
+  tab: 'all',
+};
 
 const eventButtonInteractions = {
   catalog: showEventsCatalog,
   page: showEventsCatalog,
+  tab: filterEventsByTab,
   view: showEventDetail,
 };
 
@@ -40,7 +47,8 @@ export default {
   /** @param {import("discord.js").AutocompleteInteraction} interaction */
   async autocomplete(interaction) {
     const focusedOption = interaction.options.getFocused(true);
-    const events = await getCachedEnrichedEvents();
+    const { lang } = await getUserContext(interaction.user.id);
+    const events = await getCachedEnrichedEvents(lang);
 
     if (!events || events.status !== 0) {
       await interaction.respond([{ name: 'Failed to load events', value: '-999' }]);
@@ -64,7 +72,8 @@ export default {
     const eventCid = interaction.options.getString('name');
     await interaction.deferReply();
 
-    const enriched = await getCachedEnrichedEvents();
+    const { lang, user } = await getUserContext(interaction.user.id);
+    const enriched = await getCachedEnrichedEvents(lang);
     if (!enriched || enriched.status !== 0) {
       await interaction.editReply({
         components: [errorContainer(getEnrichedError(enriched) ?? 'Failed to load events')],
@@ -76,8 +85,8 @@ export default {
     const list = enriched.data;
     const byCid = enriched.byCid;
 
-    if (BotConfig.environment === 'production') {
-      await DbEvents.create(interaction.user.id, {
+    if (user && BotConfig.environment === 'production') {
+      await DbEvents.create(user.dcid, {
         source: 'slash',
         action: 'events',
       });
@@ -102,14 +111,16 @@ export default {
       const idx = list.findIndex((e) => e.cid === eventCid);
       const catalogPage = idx >= 0 ? Math.floor(idx / EVENTS_PER_PAGE) : 0;
       await interaction.editReply({
-        components: [buildEventDetailContainer(ev, catalogPage)],
+        components: [
+          buildEventDetailContainer(ev, toCatalogStateStr({ page: catalogPage, tab: 'all' })),
+        ],
         flags: [MessageFlags.IsComponentsV2],
       });
       return;
     }
 
     await interaction.editReply({
-      components: [buildCatalogContainer(list, 0)],
+      components: [buildCatalogContainer(list, INITIAL_STATE)],
       flags: [MessageFlags.IsComponentsV2],
     });
   },
@@ -120,12 +131,13 @@ export default {
 
 /**
  * @param {import("discord.js").ButtonInteraction} interaction
- * @param {string} [pageStr]
+ * @param {string} [stateStr]
  */
-async function showEventsCatalog(interaction, pageStr) {
+async function showEventsCatalog(interaction, stateStr) {
   await interaction.deferUpdate();
 
-  const enriched = await getCachedEnrichedEvents();
+  const { lang } = await getUserContext(interaction.user.id);
+  const enriched = await getCachedEnrichedEvents(lang);
   if (!enriched || enriched.status !== 0) {
     await interaction.editReply({
       components: [errorContainer(getEnrichedError(enriched) ?? 'Failed to load events')],
@@ -134,9 +146,41 @@ async function showEventsCatalog(interaction, pageStr) {
     return;
   }
 
-  const page = Math.max(0, parseInt(pageStr ?? '0', 10) || 0);
+  const state = stateStr ? parseCatalogState(stateStr) : INITIAL_STATE;
   await interaction.editReply({
-    components: [buildCatalogContainer(enriched.data, page)],
+    components: [buildCatalogContainer(enriched.data, state)],
+    flags: [MessageFlags.IsComponentsV2],
+  });
+}
+
+/**
+ * @param {import("discord.js").ButtonInteraction} interaction
+ * @param {string} tab
+ * @param {string} [stateStr]
+ */
+async function filterEventsByTab(interaction, tab, stateStr) {
+  await interaction.deferUpdate();
+
+  const { lang } = await getUserContext(interaction.user.id);
+  const enriched = await getCachedEnrichedEvents(lang);
+  if (!enriched || enriched.status !== 0) {
+    await interaction.editReply({
+      components: [errorContainer(getEnrichedError(enriched) ?? 'Failed to load events')],
+      flags: [MessageFlags.IsComponentsV2],
+    });
+    return;
+  }
+
+  const baseState = stateStr ? parseCatalogState(stateStr) : INITIAL_STATE;
+  const nextTab = isEventTab(tab) ? tab : 'all';
+  await interaction.editReply({
+    components: [
+      buildCatalogContainer(enriched.data, {
+        ...baseState,
+        page: 0,
+        tab: nextTab,
+      }),
+    ],
     flags: [MessageFlags.IsComponentsV2],
   });
 }
@@ -144,12 +188,13 @@ async function showEventsCatalog(interaction, pageStr) {
 /**
  * @param {import("discord.js").ButtonInteraction} interaction
  * @param {string} cid
- * @param {string} [catalogPageStr]
+ * @param {string} [catalogStateStr]
  */
-async function showEventDetail(interaction, cid, catalogPageStr) {
+async function showEventDetail(interaction, cid, catalogStateStr) {
   await interaction.deferUpdate();
 
-  const enriched = await getCachedEnrichedEvents();
+  const { lang } = await getUserContext(interaction.user.id);
+  const enriched = await getCachedEnrichedEvents(lang);
   if (!enriched || enriched.status !== 0) {
     await interaction.editReply({
       components: [errorContainer(getEnrichedError(enriched) ?? 'Failed to load events')],
@@ -158,14 +203,56 @@ async function showEventDetail(interaction, cid, catalogPageStr) {
     return;
   }
 
-  const catalogPage = Math.max(0, parseInt(catalogPageStr ?? '0', 10) || 0);
+  const catalogState = catalogStateStr ? parseCatalogState(catalogStateStr) : INITIAL_STATE;
   const ev = enriched.byCid[cid];
   await interaction.editReply({
     components: ev
-      ? [buildEventDetailContainer(ev, catalogPage)]
+      ? [buildEventDetailContainer(ev, toCatalogStateStr(catalogState))]
       : [errorContainer('Event no longer available.')],
     flags: [MessageFlags.IsComponentsV2],
   });
+}
+
+/** @param {{ page: number, tab: string }} state */
+function toCatalogStateStr(state) {
+  return `${Math.max(0, state.page)}:${isEventTab(state.tab) ? state.tab : 'all'}`;
+}
+
+/** @param {string} stateStr */
+function parseCatalogState(stateStr) {
+  const [pageStr = '0', tab = 'all'] = stateStr.split(':');
+  return {
+    page: Math.max(0, parseInt(pageStr, 10) || 0),
+    tab: isEventTab(tab) ? tab : 'all',
+  };
+}
+
+/** @param {string} tab */
+function isEventTab(tab) {
+  return EVENT_TABS.includes(/** @type {(typeof EVENT_TABS)[number]} */ (tab));
+}
+
+/**
+ * @param {CachedBulletinEvent} ev
+ * @param {string} tab
+ */
+function matchesEventTab(ev, tab) {
+  if (tab === 'all') return true;
+  return ev.tab === tab;
+}
+
+/** @param {string} tab */
+function getEventTabLabel(tab) {
+  switch (tab) {
+    case 'events':
+      return 'Events';
+    case 'updates':
+      return 'Updates';
+    case 'news':
+      return 'News';
+    default:
+      return 'All';
+  }
 }
 
 /** @param {string} s */
@@ -258,20 +345,37 @@ function formatStartAt(startAt) {
 
 /**
  * @param {CachedBulletinEvent[]} list
- * @param {number} page
+ * @param {{ page: number, tab: string }} state
  */
-function buildCatalogContainer(list, page) {
-  const totalPages = Math.max(1, Math.ceil(list.length / EVENTS_PER_PAGE));
+function buildCatalogContainer(list, { page, tab }) {
+  const filtered = list.filter((ev) => matchesEventTab(ev, tab));
+  const totalPages = Math.max(1, Math.ceil(filtered.length / EVENTS_PER_PAGE));
   const clampedPage = Math.min(Math.max(0, page), totalPages - 1);
-  const slice = list.slice(clampedPage * EVENTS_PER_PAGE, (clampedPage + 1) * EVENTS_PER_PAGE);
+  const slice = filtered.slice(clampedPage * EVENTS_PER_PAGE, (clampedPage + 1) * EVENTS_PER_PAGE);
+  const stateStr = toCatalogStateStr({ page: clampedPage, tab });
 
   const container = new ContainerBuilder().addTextDisplayComponents((textDisplay) =>
     textDisplay.setContent('## ▼// Game events')
   );
 
-  if (list.length === 0) {
+  container.addActionRowComponents((actionRow) =>
+    actionRow.addComponents(
+      ...EVENT_TABS.map((value) =>
+        new ButtonBuilder()
+          .setCustomId(createComponentId('events', 'tab', value, stateStr))
+          .setLabel(getEventTabLabel(value))
+          .setStyle(tab === value ? ButtonStyle.Success : ButtonStyle.Secondary)
+      )
+    )
+  );
+
+  if (filtered.length === 0) {
     container.addTextDisplayComponents((textDisplay) =>
-      textDisplay.setContent('No events available right now.')
+      textDisplay.setContent(
+        tab === 'all'
+          ? 'No events available right now.'
+          : `No ${getEventTabLabel(tab).toLowerCase()} available right now.`
+      )
     );
     return container;
   }
@@ -287,21 +391,23 @@ function buildCatalogContainer(list, page) {
         .addTextDisplayComponents((textDisplay) => textDisplay.setContent(lines.join('\n')))
         .setButtonAccessory((button) =>
           button
-            .setCustomId(createComponentId('events', 'view', ev.cid, String(clampedPage)))
+            .setCustomId(createComponentId('events', 'view', ev.cid, stateStr))
             .setLabel('View event')
             .setStyle(ButtonStyle.Primary)
         )
     );
   }
 
-  if (list.length > EVENTS_PER_PAGE) {
+  if (filtered.length > EVENTS_PER_PAGE) {
     const prevPage = Math.max(0, clampedPage - 1);
     const nextPage = Math.min(totalPages - 1, clampedPage + 1);
 
     container.addActionRowComponents((actionRow) =>
       actionRow.addComponents(
         new ButtonBuilder()
-          .setCustomId(createComponentId('events', 'page', String(prevPage)))
+          .setCustomId(
+            createComponentId('events', 'page', toCatalogStateStr({ page: prevPage, tab }))
+          )
           .setLabel('Previous')
           .setStyle(clampedPage === 0 ? ButtonStyle.Secondary : ButtonStyle.Success)
           .setDisabled(clampedPage === 0),
@@ -311,7 +417,9 @@ function buildCatalogContainer(list, page) {
           .setStyle(ButtonStyle.Secondary)
           .setDisabled(true),
         new ButtonBuilder()
-          .setCustomId(createComponentId('events', 'page', String(nextPage)))
+          .setCustomId(
+            createComponentId('events', 'page', toCatalogStateStr({ page: nextPage, tab }))
+          )
           .setLabel('Next')
           .setStyle(clampedPage >= totalPages - 1 ? ButtonStyle.Secondary : ButtonStyle.Success)
           .setDisabled(clampedPage >= totalPages - 1)
@@ -324,9 +432,9 @@ function buildCatalogContainer(list, page) {
 
 /**
  * @param {CachedBulletinEvent} ev
- * @param {number} catalogPage
+ * @param {string} catalogStateStr
  */
-function buildEventDetailContainer(ev, catalogPage) {
+function buildEventDetailContainer(ev, catalogStateStr) {
   const imageUrls = extractImgSrcs(ev.html);
   const body = htmlToPlain(ev.html);
 
@@ -353,7 +461,7 @@ function buildEventDetailContainer(ev, catalogPage) {
   container.addActionRowComponents((actionRow) =>
     actionRow.addComponents(
       new ButtonBuilder()
-        .setCustomId(createComponentId('events', 'catalog', String(catalogPage)))
+        .setCustomId(createComponentId('events', 'catalog', catalogStateStr))
         .setLabel('Back')
         .setStyle(ButtonStyle.Secondary)
     )
@@ -371,4 +479,15 @@ function getEnrichedError(enriched) {
     return enriched?.msg ?? 'Failed to load events';
   }
   return null;
+}
+
+/**
+ * @param {string} dcid
+ */
+async function getUserContext(dcid) {
+  const user = await Users.getByDcid(dcid);
+  return {
+    lang: /** @type {import('#/constants/languages.js').Language} */ (user?.lang || 'en-us'),
+    user,
+  };
 }

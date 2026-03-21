@@ -19,6 +19,7 @@ const eventsEnrichedCache = getOrCreateCache('events-enriched', EVENTS_TTL);
 function toCachedBulletinEvent(online, detail, topic) {
   return {
     cid: detail.cid,
+    tab: /** @type {"events" | "updates" | "news"} */ (detail.tab),
     header: detail.header,
     html: detail.data.html,
     linkType: detail.data.linkType,

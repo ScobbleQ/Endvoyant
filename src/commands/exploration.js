@@ -105,8 +105,9 @@ export default {
       return;
     }
 
-    if (BotConfig.environment === 'production') {
-      await Events.create(interaction.user.id, {
+    const interactionUser = await Users.getByDcid(interaction.user.id);
+    if (interactionUser && BotConfig.environment === 'production') {
+      await Events.create(interactionUser.dcid, {
         aid: account.id,
         source: 'slash',
         action: 'exploration',

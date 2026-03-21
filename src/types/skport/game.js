@@ -28,6 +28,7 @@
 /**
  * @typedef {Object} CachedBulletinEvent
  * @property {string} cid
+ * @property {"events" | "updates" | "news"} tab
  * @property {string} header
  * @property {string} html
  * @property {number} linkType

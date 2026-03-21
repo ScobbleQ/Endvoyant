@@ -39,7 +39,7 @@ export default {
     }
 
     if (user && BotConfig.environment === 'production') {
-      await Events.create(interaction.user.id, {
+      await Events.create(user.dcid, {
         source: 'slash',
         action: 'enka',
       });

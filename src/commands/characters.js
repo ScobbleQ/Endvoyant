@@ -15,7 +15,7 @@ import {
   Rarity2Emoji,
 } from '#/constants/emojis.js';
 import { ElementType, Profession } from '#/constants/skport.js';
-import { Accounts, Events } from '#/db/index.js';
+import { Accounts, Events, Users } from '#/db/index.js';
 import { getCachedCardDetail } from '#/skport/utils/getCachedCardDetail.js';
 import { createComponentId } from '#/utils/componentId.js';
 import { getMaxLevel, getBreakthroughLevel } from '#/utils/game.js';
@@ -149,8 +149,9 @@ export default {
       return;
     }
 
-    if (BotConfig.environment === 'production') {
-      await Events.create(interaction.user.id, {
+    const user = await Users.getByDcid(interaction.user.id);
+    if (user && BotConfig.environment === 'production') {
+      await Events.create(user.dcid, {
         source: 'slash',
         action: 'characters',
       });

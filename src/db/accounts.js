@@ -26,6 +26,7 @@ export class Accounts {
   static async getByDcid(dcid) {
     return await db.query.accounts.findMany({
       where: eq(accounts.dcid, dcid),
+      orderBy: (desc(accounts.isPrimary), asc(accounts.addedOn)),
     });
   }
   /**

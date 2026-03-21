@@ -55,7 +55,7 @@ export default {
     const eventId =
       BotConfig.environment === 'production'
         ? ((
-            await Events.create(interaction.user.id, {
+            await Events.create(user.dcid, {
               source: 'slash',
               action: 'attendance',
             })
