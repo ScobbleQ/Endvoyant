@@ -8,9 +8,9 @@ import logger from '#/logger';
 const commands = [];
 
 const folderPath = join(import.meta.dirname, 'commands');
-const commandFolders = readdirSync(folderPath).filter((file) => file.endsWith('.js'));
+const commandFiles = readdirSync(folderPath).filter((file) => file.endsWith('.js'));
 
-for (const file of commandFolders) {
+for (const file of commandFiles) {
   const filePath = join(folderPath, file);
   const command = await import(filePath);
 

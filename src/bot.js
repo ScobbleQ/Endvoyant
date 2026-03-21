@@ -5,7 +5,7 @@ import { BotConfig } from '#/config';
 import logger from '#/logger';
 
 const client =
-  /** @type {Client & { commands: Collection<string, any> }} */
+  /** @type {Client & { commands: Collection<string, any>, cooldowns: Collection<string, any> }} */
   (
     new Client({
       intents: [GatewayIntentBits.Guilds],
@@ -13,11 +13,12 @@ const client =
   );
 
 client.commands = new Collection();
+client.cooldowns = new Collection();
 
 const folderPath = join(import.meta.dirname, 'commands');
-const commandFolders = readdirSync(folderPath);
+const commandFiles = readdirSync(folderPath).filter((file) => file.endsWith('.js'));
 
-for (const file of commandFolders) {
+for (const file of commandFiles) {
   const filePath = join(folderPath, file);
   const command = await import(filePath);
 
@@ -29,9 +30,9 @@ for (const file of commandFolders) {
 }
 
 const eventPath = join(import.meta.dirname, 'events');
-const eventFolders = readdirSync(eventPath);
+const eventFiles = readdirSync(eventPath).filter((file) => file.endsWith('.js'));
 
-for (const file of eventFolders) {
+for (const file of eventFiles) {
   const filePath = join(eventPath, file);
   const event = await import(filePath);
 
