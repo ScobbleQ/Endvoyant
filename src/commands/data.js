@@ -25,6 +25,11 @@ export default {
       await Events.create(user.dcid, {
         source: 'slash',
         action: 'data',
+        metadata: {
+          ...(interaction.inGuild() && {
+            guildId: interaction.guildId,
+          }),
+        },
       });
     }
 

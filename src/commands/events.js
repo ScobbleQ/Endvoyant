@@ -43,7 +43,6 @@ export default {
     )
     .setIntegrationTypes([0, 1])
     .setContexts([0, 1, 2]),
-
   /** @param {import("discord.js").AutocompleteInteraction} interaction */
   async autocomplete(interaction) {
     const focusedOption = interaction.options.getFocused(true);
@@ -66,7 +65,6 @@ export default {
 
     await interaction.respond(filtered.map((e) => ({ name: e.header, value: e.cid })));
   },
-
   /** @param {import("discord.js").ChatInputCommandInteraction} interaction */
   async execute(interaction) {
     const eventCid = interaction.options.getString('name');
@@ -89,6 +87,11 @@ export default {
       await DbEvents.create(user.dcid, {
         source: 'slash',
         action: 'events',
+        metadata: {
+          ...(interaction.inGuild() && {
+            guildId: interaction.guildId,
+          }),
+        },
       });
     }
 

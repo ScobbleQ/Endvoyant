@@ -52,16 +52,6 @@ export default {
 
     await interaction.deferReply();
 
-    const eventId =
-      BotConfig.environment === 'production'
-        ? ((
-            await Events.create(user.dcid, {
-              source: 'slash',
-              action: 'attendance',
-            })
-          )[0]?.id ?? null)
-        : null;
-
     const accountList = await Accounts.getByDcid(user.dcid);
     if (!accountList || accountList.length === 0) {
       await interaction.editReply({
@@ -71,8 +61,36 @@ export default {
       return;
     }
 
-    const accounts = accountQuery ? [accountList.find((a) => a.id === accountQuery)] : accountList;
+    const accounts = accountQuery ? accountList.filter((a) => a.id === accountQuery) : accountList;
+    if (accounts.length === 0) {
+      await interaction.editReply({
+        components: [errorContainer('Account not found.')],
+        flags: [MessageFlags.IsComponentsV2],
+      });
+      return;
+    }
+
     let hasContent = false;
+    const eventMetadata = {
+      ...(interaction.inGuild() && {
+        guildId: interaction.guildId,
+      }),
+    };
+
+    /** @type {Array<{ aid: string, reward: { name: string, count: number, icon: string }, bonus?: Array<{ name: string, count: number, icon: string }> }>} */
+    const eventResults = [];
+
+    const eventId =
+      BotConfig.environment === 'production'
+        ? ((
+            await Events.create(user.dcid, {
+              source: 'slash',
+              action: 'attendance',
+              ...(accountQuery && { aid: accounts[0]?.id }),
+              metadata: eventMetadata,
+            })
+          )[0]?.id ?? null)
+        : null;
 
     const container = new ContainerBuilder().addTextDisplayComponents((textDisplay) =>
       textDisplay.setContent(`## ▼// Sign-in Reward\n-# <t:${Math.floor(Date.now() / 1000)}:F>`)
@@ -113,19 +131,15 @@ export default {
             .slice(1)
             .map((r) => ({ name: r.name, count: r.count, icon: r.icon }));
 
-          if (eventId) {
-            await Events.update(user.dcid, eventId, {
-              aid: a.id,
-              metadata: {
-                reward: {
-                  name: mainReward.name,
-                  count: mainReward.count,
-                  icon: mainReward.icon,
-                },
-                ...(bonusRewards.length > 0 && { bonus: bonusRewards }),
-              },
-            });
-          }
+          eventResults.push({
+            aid: a.id,
+            reward: {
+              name: mainReward.name,
+              count: mainReward.count,
+              icon: mainReward.icon,
+            },
+            ...(bonusRewards.length > 0 && { bonus: bonusRewards }),
+          });
 
           const rewardString = `${mainReward.name}\nAmount: ${mainReward.count}`;
           const bonusString =
@@ -149,11 +163,33 @@ export default {
 
     await Promise.allSettled(task);
 
+    if (eventId && eventResults.length > 0) {
+      await Events.update(user.dcid, eventId, {
+        ...(accountQuery && { aid: eventResults[0]?.aid ?? null }),
+        metadata: accountQuery
+          ? {
+              ...eventMetadata,
+              reward: eventResults[0].reward,
+              ...(eventResults[0].bonus && { bonus: eventResults[0].bonus }),
+            }
+          : {
+              ...eventMetadata,
+              results: eventResults,
+            },
+      });
+    }
+
     if (hasContent) {
       await interaction.editReply({
         components: [container],
         flags: [MessageFlags.IsComponentsV2],
       });
+      return;
     }
+
+    await interaction.editReply({
+      components: [errorContainer('Failed to sign in to any accounts.')],
+      flags: [MessageFlags.IsComponentsV2],
+    });
   },
 };

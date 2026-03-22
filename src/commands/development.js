@@ -171,12 +171,20 @@ export default {
     }
 
     // This is to not give false events when other users target another user's account
-    const interactionUser = await Users.getByDcid(interaction.user.id);
+    const interactionUser =
+      interaction.user.id === user.dcid ? user : await Users.getByDcid(interaction.user.id);
+
     if (interactionUser && BotConfig.environment === 'production') {
       await Events.create(interactionUser.dcid, {
-        aid: account.id,
+        ...(!isTargetingOtherUser && { aid: account.id }),
         source: 'slash',
         action: 'development',
+        metadata: {
+          ...(isTargetingOtherUser && { targetDcid: user.dcid, targetAid: account.id }),
+          ...(interaction.inGuild() && {
+            guildId: interaction.guildId,
+          }),
+        },
       });
     }
 
