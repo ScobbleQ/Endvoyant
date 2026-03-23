@@ -45,7 +45,7 @@ export async function checkAttendance(client) {
                 serverId: a.serverId,
               });
 
-              const headingString = `### ${a.nickname} (${privacy(a.roleId, a.isPrivate)})`;
+              const headingString = `### ${a.nickname} [\`${privacy(a.roleId, a.isPrivate)}\`]`;
 
               if (signin.status !== 0) {
                 container.addSeparatorComponents((separator) => separator);

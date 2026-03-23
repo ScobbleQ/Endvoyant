@@ -101,7 +101,7 @@ export default {
       limit(async () => {
         try {
           if (!a) return;
-          const headingString = `### ${a.nickname} (${privacy(a.roleId, a.isPrivate)})`;
+          const headingString = `### ${a.nickname} [\`${privacy(a.roleId, a.isPrivate)}\`]`;
 
           const oauth = await grantOAuth({ token: a.accountToken, appCode: '6eb76d4e13aa36e6' });
           if (!oauth || oauth.status !== 0) throw new Error(oauth?.msg || 'OAuth failed');
