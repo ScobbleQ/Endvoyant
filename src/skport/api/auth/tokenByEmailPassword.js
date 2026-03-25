@@ -51,6 +51,10 @@ export async function tokenByEmailPassword(email, password) {
     }
 
     // Maybe ask the user to complete the captcha if status is 1 (data.data.captcha is present)
+    // Temporary patch for now, should ask user to solve later
+    if (data.data.captcha) {
+      return { status: -1, msg: 'Too many attempts, please try again later.', timestamp: Math.floor(Date.now() / 1000).toString() };
+    }
 
     return { status: 0, data: data.data };
   } catch (error) {
