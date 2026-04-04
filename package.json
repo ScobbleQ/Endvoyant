@@ -28,13 +28,14 @@
   },
   "scripts": {
     "test": "echo \"Error: no test specified\" && exit 1",
+    "build": "tsc",
     "deploy": "node src/deploy.js",
     "start": "node index.js",
     "lint": "oxlint",
     "lint:fix": "oxlint --fix",
     "format": "oxfmt",
     "format:check": "oxfmt --check",
-    "typecheck": "tsc --noEmit -p jsconfig.json",
+    "typecheck": "tsc --noEmit -p tsconfig.json",
     "db:migrate": "drizzle-kit migrate",
     "db:pull": "drizzle-kit pull",
     "db:studio": "drizzle-kit studio"
@@ -52,6 +53,7 @@
     "user-agents": "^1.1.669"
   },
   "devDependencies": {
+    "@types/node": "^25.5.2",
     "drizzle-kit": "^0.31.8",
     "oxfmt": "^0.41.0",
     "oxlint": "^1.43.0",

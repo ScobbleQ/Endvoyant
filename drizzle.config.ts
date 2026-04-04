@@ -7,19 +7,13 @@ if (!process.env.DATABASE_URL) {
 }
 
 export default defineConfig({
-  out: './drizzle',
   dialect: 'postgresql',
+  out: './drizzle',
   dbCredentials: {
     url: process.env.DATABASE_URL,
   },
   schema: './drizzle/schema.ts',
-  migrations: {
-    path: './drizzle/migrations',
-    pattern: '*.ts',
-  },
+  migrations: {},
   verbose: true,
-  strict: true,
-  onSuccess: () => {
-    console.info('[Drizzle] Migration successful');
-  },
+  strict: true
 });

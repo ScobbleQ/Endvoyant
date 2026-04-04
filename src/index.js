@@ -2,7 +2,7 @@ import { ShardingManager } from 'discord.js';
 import { BotConfig } from '#/config';
 import logger from '#/logger';
 
-const manager = new ShardingManager('./src/bot.js', {
+const manager = new ShardingManager('./bot.js', {
   token: BotConfig.token,
 });
 
