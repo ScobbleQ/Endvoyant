@@ -1,6 +1,5 @@
 import dotenv from 'dotenv';
-
-dotenv.config();
+dotenv.config({ quiet: true });
 
 export const BotConfig = {
   token: process.env.TOKEN || '',
