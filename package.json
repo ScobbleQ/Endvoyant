@@ -41,7 +41,6 @@
   },
   "dependencies": {
     "@napi-rs/canvas": "^0.1.92",
-    "axios": "1.13.5",
     "cron": "^4.4.0",
     "discord.js": "^14.26.2",
     "dotenv": "^17.2.3",
