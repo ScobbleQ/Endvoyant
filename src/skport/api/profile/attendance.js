@@ -1,12 +1,15 @@
 import UserAgent from 'user-agents';
+import { langToWeb } from '#/constants/webLanguage.js';
 import { computeSign } from '#/skport/utils/computeSign.js';
 import logger from '#/logger';
+
+/** @typedef {import('#/constants/languages.js').Language} Language */
 /** @typedef {import('#/types/skport/profile.js').AwardIds} AwardIds */
 /** @typedef {import('#/types/skport/profile.js').ResourceItem} ResourceItem */
 
 /**
  * Submit attendance to the API
- * @param {{cred: string, token: string, uid: string, serverId: string}} param0
+ * @param {{cred: string, token: string, uid: string, serverId: string, lang: Language}} param0
  * @returns {Promise<{ status: -1, msg: string, timestamp: string } | { status: 0, data: ResourceItem[] }>}
  * @example
  * // Login with email and password
@@ -31,7 +34,7 @@ import logger from '#/logger';
  * });
  * console.dir(attendance, { depth: null });
  */
-export async function attendance({ cred, token, uid, serverId }) {
+export async function attendance({ cred, token, uid, serverId, lang = 'en' }) {
   const url = 'https://zonai.skport.com/web/v1/game/endfield/attendance';
 
   const headers = {
@@ -47,7 +50,7 @@ export async function attendance({ cred, token, uid, serverId }) {
     Priority: 'u=3, i',
     Referer: 'https://game.skport.com/',
     'sk-game-role': `3_${uid}_${serverId}`,
-    'sk-language': 'en',
+    'sk-language': langToWeb[lang],
     'User-Agent': new UserAgent({ deviceCategory: 'desktop' }).toString(),
     vName: '1.0.0',
   };
@@ -72,9 +75,8 @@ export async function attendance({ cred, token, uid, serverId }) {
     });
 
     if (!res.ok) {
-      logger.fatal(res, 'Line 94 of skport/api/profile/attendance.js');
-      const msg = await res.text();
-      const err = JSON.parse(msg);
+      logger.fatal(res, 'Line 78 of skport/api/profile/attendance.js');
+      const err = await res.json();
       return {
         status: -1,
         msg: err.message,
@@ -84,7 +86,7 @@ export async function attendance({ cred, token, uid, serverId }) {
 
     const data = await res.json();
     if (data.code !== 0) {
-      logger.fatal(data, 'Line 106 of skport/api/profile/attendance.js');
+      logger.fatal(data, 'Line 89 of skport/api/profile/attendance.js');
       return { status: -1, msg: data.message, timestamp: data.timestamp };
     }
 
@@ -94,7 +96,7 @@ export async function attendance({ cred, token, uid, serverId }) {
 
     return { status: 0, data: resourceItems };
   } catch (error) {
-    logger.fatal(error, 'Line 116 of skport/api/profile/attendance.js');
+    logger.fatal(error, 'Line 99 of skport/api/profile/attendance.js');
     return {
       status: -1,
       msg: /** @type {Error} */ (error).message,
