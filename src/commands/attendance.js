@@ -110,15 +110,12 @@ export default {
           const cred = await generateCredByCode({ code: oauth.data.code });
           if (!cred || cred.status !== 0) throw new Error(cred?.msg || 'Credential failed');
 
-          console.log(user.lang);
-          console.log(langToWeb[user.lang]);
-
           const signin = await attendance({
             cred: cred.data.cred,
             token: cred.data.token,
             uid: a.roleId,
             serverId: a.serverId,
-            lang: user.lang,
+            lang: /** @type {import('#/constants/languages.js').Language} */ (user.lang),
           });
 
           hasContent = true;

@@ -1,10 +1,11 @@
+import { langToWeb } from '#/constants/webLanguage.js';
 import { computeSign } from '#/skport/utils/computeSign.js';
 import logger from '#/logger';
 /** @typedef {import('#/types/skport/profile.js').CardDetail} CardDetail */
 
 /**
  *
- * @param {{ serverId: string, roleId: string, cred: string, token: string }} param0
+ * @param {{ serverId: string, roleId: string, cred: string, token: string, lang: import('#/constants/languages.js').Language }} param0
  * @returns {Promise<{ status: -1, msg: string, timestamp: string } | { status: 0, data: CardDetail }>}
  * @example
  * // Login with email and password
@@ -27,8 +28,11 @@ import logger from '#/logger';
  * });
  * console.dir(card, { depth: null });
  */
-export async function cardDetail({ serverId, roleId, cred, token }) {
+export async function cardDetail({ serverId, roleId, cred, token, lang = 'en-us' }) {
   const url = 'https://zonai.skport.com/api/v1/game/endfield/card/detail';
+
+  console.log(lang);
+  console.log(langToWeb[lang]);
 
   const headers = {
     Accept: '*/*',
@@ -46,7 +50,7 @@ export async function cardDetail({ serverId, roleId, cred, token }) {
     'User-Agent': 'Skport/0.7.0 (com.gryphline.skport; build:700089; Android 33; ) Okhttp/5.1.0',
     cred: cred,
     platform: '3',
-    'sk-language': 'en',
+    'sk-language': langToWeb[lang],
     vName: '1.0.0',
     priority: 'u=1, i',
     'sk-game-role': `3_${roleId}_${serverId}`,
