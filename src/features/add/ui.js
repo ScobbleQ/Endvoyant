@@ -44,7 +44,7 @@ export function addAccountContainer() {
         '- Enter Cookies: Use your cookies to login to SKPort.',
         '-# Multiple Accounts can be added by using the `/add account` command again.',
         '',
-        'The source code is avaialable on [GitHub](https://github.com/ScobbleQ/Endministrator). We **do not** store your login credentials after the login process is completed. Need help? Join our [Support Server](https://discord.gg/5rUsSZTyf2).',
+        'The source code is avaialable on [GitHub](https://github.com/ScobbleQ/Endministrator). We **do not** store your login credentials after the login process is completed. Need help? Join our [Support Server](https://discord.gg/5rUsSZTyf2) or view the [guide online](https://ake.xentriom.com/docs/add).',
       ].join('\n')
     )
   );
