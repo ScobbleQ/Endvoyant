@@ -34,7 +34,7 @@ import logger from '#/logger';
  * });
  * console.dir(attendance, { depth: null });
  */
-export async function attendance({ cred, token, uid, serverId, lang = 'en' }) {
+export async function attendance({ cred, token, uid, serverId, lang = 'en-us' }) {
   const url = 'https://zonai.skport.com/web/v1/game/endfield/attendance';
 
   const headers = {
