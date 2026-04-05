@@ -53,14 +53,18 @@ export async function tokenByEmailPassword(email, password) {
     // Maybe ask the user to complete the captcha if status is 1 (data.data.captcha is present)
     if (data?.status === 1 && data?.data?.captcha) {
       const captcha = data.data.captcha;
-      const url = new URL('https://ake.xentriom.com/captcha/verify')
+      const url = new URL('https://ake.xentriom.com/captcha/verify');
       url.searchParams.set('geetestId', captcha.geetestId);
       url.searchParams.set('challenge', captcha.challenge);
       url.searchParams.set('riskType', captcha.riskType);
       logger.info(`Captcha URL: ${url.toString()}`);
 
       // Temporary patch for now, should ask user to solve later
-      return { status: -1, msg: 'Too many attempts, please try again later.', timestamp: Math.floor(Date.now() / 1000).toString() };
+      return {
+        status: -1,
+        msg: 'Too many attempts, please try again later.',
+        timestamp: Math.floor(Date.now() / 1000).toString(),
+      };
     }
 
     return { status: 0, data: data.data };

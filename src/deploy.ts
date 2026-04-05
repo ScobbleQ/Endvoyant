@@ -4,7 +4,6 @@ import { walkJavaScriptFiles } from '#/utils/walkJavaScriptFiles.js';
 import { BotConfig } from '#/config';
 import logger from '#/logger';
 
-/** @type {import("discord.js").SlashCommandBuilder[]} */
 const commands = [];
 
 const folderPath = join(import.meta.dirname, 'commands');

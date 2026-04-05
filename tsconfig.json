@@ -8,7 +8,6 @@
     "resolveJsonModule": true,
     "lib": ["esnext"],
     "types": ["node"],
-
     "removeComments": true,
     "declaration": false,
     "declarationMap": false,
@@ -30,6 +29,12 @@
     "forceConsistentCasingInFileNames": true,
     "allowJs": true,
     "noEmitOnError": true,
+    "paths": {
+      "#/*": ["./src/*"],
+      "#/config": ["./src/config/index.js"],
+      "#/logger": ["./src/utils/logger.js"],
+      "#/types/*": ["./src/types/*"]
+    }
   },
   "include": ["src/**/*"],
   "exclude": ["node_modules", "dist", "drizzle", "scratch"]

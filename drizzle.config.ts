@@ -15,5 +15,5 @@ export default defineConfig({
   schema: './drizzle/schema.ts',
   migrations: {},
   verbose: true,
-  strict: true
+  strict: true,
 });
