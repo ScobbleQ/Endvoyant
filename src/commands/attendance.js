@@ -1,6 +1,7 @@
 import { ContainerBuilder, MessageFlags, SlashCommandBuilder } from 'discord.js';
 import pLimit from 'p-limit';
 import { errorContainer } from '#/components/index.js';
+import { langToWeb } from '#/constants/webLanguage.js';
 import { Accounts, Users, Events } from '#/db/index.js';
 import { attendance, generateCredByCode, grantOAuth } from '#/skport/api/index.js';
 import { privacy } from '#/utils/index.js';
@@ -109,11 +110,15 @@ export default {
           const cred = await generateCredByCode({ code: oauth.data.code });
           if (!cred || cred.status !== 0) throw new Error(cred?.msg || 'Credential failed');
 
+          console.log(user.lang);
+          console.log(langToWeb[user.lang]);
+
           const signin = await attendance({
             cred: cred.data.cred,
             token: cred.data.token,
             uid: a.roleId,
             serverId: a.serverId,
+            lang: user.lang,
           });
 
           hasContent = true;
