@@ -31,9 +31,6 @@ import logger from '#/logger';
 export async function cardDetail({ serverId, roleId, cred, token, lang = 'en-us' }) {
   const url = 'https://zonai.skport.com/api/v1/game/endfield/card/detail';
 
-  console.log(lang);
-  console.log(langToWeb[lang]);
-
   const headers = {
     Accept: '*/*',
     'Accept-Encoding': 'br;q=1.0, gzip;q=0.9, deflate;q=0.8',
