@@ -269,7 +269,7 @@ const resolveAccount = (accounts, shortId) =>
     ? accounts.find((a) => a.shortId === shortId)
     : (accounts.find((a) => a.isPrimary) ?? accounts[0]);
 
-/** @param {{ status?: number; msg?: string } | null} profile */
+/** @param {{ status?: number | string; msg?: string } | null} profile */
 const parseProfileError = (profile) => {
   try {
     const parsed = JSON.parse(profile?.msg ?? '{}');

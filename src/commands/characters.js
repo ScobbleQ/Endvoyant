@@ -380,7 +380,7 @@ const substituteTacticalParams = (text, params) => {
 /**
  * @param {string} dcid
  * @param {string} [aid] - Account ID; if omitted, uses primary/first
- * @returns {Promise<{ status: -1, msg: string } | { status: 0, data: Characters[] }>}
+ * @returns {Promise<{ status: -1, msg: string } | { status: 0, data: Characters[] } | { status: string, msg: string }>}
  */
 const getCharacters = async (dcid, aid) => {
   const result = await getCachedCardDetail(dcid, aid);
@@ -397,7 +397,7 @@ const resolveAccount = (accounts, targetShortId) =>
     ? accounts.find((a) => String(a.shortId) === targetShortId)
     : (accounts.find((a) => a.isPrimary) ?? accounts[0]);
 
-/** @param {{ msg?: string, status?: number } | null} result */
+/** @param {{ msg?: string, status?: number | string } | null} result */
 const parseErrorMsg = (result) => {
   let code = -1;
   let msg = result?.msg ?? 'Unknown error';

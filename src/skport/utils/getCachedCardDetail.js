@@ -11,7 +11,7 @@ const cardDetailCache = getOrCreateCache('card-detail', CARD_DETAIL_TTL);
 /**
  * @param {string} dcid - The Discord ID
  * @param {string | undefined} aid - The account ID
- * @returns {Promise<{ status: -1, msg: string } | { status: 0, data: CardDetail }>}
+ * @returns {Promise<{ status: -1, msg: string } | { status: 0, data: CardDetail } | { status: string, msg: string }>}
  */
 export async function getCachedCardDetail(dcid, aid) {
   const cacheKey = `card-${dcid}:${aid}`;
@@ -28,7 +28,11 @@ export async function getCachedCardDetail(dcid, aid) {
     if (!account) return { status: -1, msg: 'SKPort account not found' };
 
     const oauth = await grantOAuth({ token: account.accountToken, appCode: '6eb76d4e13aa36e6' });
-    if (oauth.status !== 0) return { status: -1, msg: 'Failed to grant OAuth token' };
+    if (oauth.status !== 0) {
+      const parsed = JSON.parse(oauth.msg);
+      if (parsed.status === 3) return { status: 'E1000', msg: 'Login status expired' };
+      return { status: -1, msg: 'Failed to grant OAuth token' };
+    }
 
     const cred = await generateCredByCode({ code: oauth.data.code });
     if (cred.status !== 0) return { status: -1, msg: 'Failed to generate credentials' };

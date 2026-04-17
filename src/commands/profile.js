@@ -199,9 +199,7 @@ export default {
 
     const profile = await getCachedCardDetail(dcid, account.id);
     if (!profile || profile.status !== 0) {
-      const parsed = JSON.parse(profile?.msg ?? '{}');
-      const code = parsed.code || profile?.status || -1;
-      const msg = parsed.message || profile?.msg || 'Unknown error';
+      const { code, msg } = parseProfileError(profile);
       await interaction.editReply({
         components: [errorContainer(`[${code}] ${msg}`)],
         flags: [MessageFlags.IsComponentsV2],
@@ -299,4 +297,17 @@ export default {
       flags: [MessageFlags.IsComponentsV2],
     });
   },
+};
+
+/** @param {{ status?: number | string; msg?: string } | null} profile */
+const parseProfileError = (profile) => {
+  try {
+    const parsed = JSON.parse(profile?.msg ?? '{}');
+    return {
+      code: parsed.code ?? profile?.status ?? -1,
+      msg: parsed.message ?? profile?.msg ?? 'Unknown error',
+    };
+  } catch {
+    return { code: profile?.status ?? -1, msg: profile?.msg ?? 'Unknown error' };
+  }
 };
