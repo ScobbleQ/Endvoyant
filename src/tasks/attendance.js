@@ -43,6 +43,7 @@ export async function checkAttendance(client) {
                 token: cred.data.token,
                 uid: a.roleId,
                 serverId: a.serverId,
+                lang: /** @type {import('#/constants/languages.js').Language} */ (u.lang),
               });
 
               const headingString = `### ${a.nickname} [\`${privacy(a.roleId, a.isPrivate)}\`]`;
