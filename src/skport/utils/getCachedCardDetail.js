@@ -29,8 +29,10 @@ export async function getCachedCardDetail(dcid, aid) {
 
     const oauth = await grantOAuth({ token: account.accountToken, appCode: '6eb76d4e13aa36e6' });
     if (oauth.status !== 0) {
-      const parsed = JSON.parse(oauth.msg);
-      if (parsed.status === 3) return { status: 'E1000', msg: 'Login status expired' };
+      try {
+        const parsed = JSON.parse(oauth.msg);
+        if (parsed.status === 3) return { status: 'E1000', msg: 'Login status expired' };
+      } catch {}
       return { status: -1, msg: 'Failed to grant OAuth token' };
     }
 

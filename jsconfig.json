@@ -9,7 +9,7 @@
       "#/*": ["./src/*"],
       "#/config": ["./src/config/index.js"],
       "#/logger": ["./src/utils/logger.js"],
-      "#/types/*": ["./src/types/*"],
+      "#/types/*": ["./src/types/*"]
     },
     "module": "NodeNext",
     "moduleResolution": "NodeNext",
