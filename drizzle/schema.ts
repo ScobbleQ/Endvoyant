@@ -11,7 +11,25 @@ import {
   smallint,
   bigint,
   jsonb,
+  pgEnum,
 } from 'drizzle-orm/pg-core';
+
+export const langEnum = pgEnum('langEnum', [
+  'de-de',
+  'en-us',
+  'es-mx',
+  'fr-fr',
+  'id-id',
+  'it-it',
+  'ja-jp',
+  'ko-kr',
+  'pt-br',
+  'ru-ru',
+  'th-th',
+  'vi-vn',
+  'zh-cn',
+  'zh-tw',
+]);
 
 export const accounts = pgTable(
   'accounts',
@@ -56,14 +74,16 @@ export const efCodes = pgTable(
   'ef_codes',
   {
     // You can use { mode: "bigint" } if numbers are exceeding js number limitations
-    id: bigint({ mode: 'number' }).primaryKey().generatedByDefaultAsIdentity({
-      name: 'ef_codes_id_seq',
-      startWith: 1,
-      increment: 1,
-      minValue: 1,
-      maxValue: 9223372036854775807,
-      cache: 1,
-    }),
+    id: bigint({ mode: 'number' })
+      .primaryKey()
+      .generatedByDefaultAsIdentity({
+        name: 'ef_codes_id_seq',
+        startWith: 1,
+        increment: 1,
+        minValue: 1,
+        maxValue: 9223372036854775807,
+        cache: 1,
+      }),
     code: text().notNull(),
     rewards: text().array(),
     notes: text().array(),
@@ -75,14 +95,16 @@ export const efAttemptedCodes = pgTable(
   'ef_attempted_codes',
   {
     // You can use { mode: "bigint" } if numbers are exceeding js number limitations
-    id: bigint({ mode: 'number' }).primaryKey().generatedByDefaultAsIdentity({
-      name: 'ef_attempted_codes_id_seq',
-      startWith: 1,
-      increment: 1,
-      minValue: 1,
-      maxValue: 9223372036854775807,
-      cache: 1,
-    }),
+    id: bigint({ mode: 'number' })
+      .primaryKey()
+      .generatedByDefaultAsIdentity({
+        name: 'ef_attempted_codes_id_seq',
+        startWith: 1,
+        increment: 1,
+        minValue: 1,
+        maxValue: 9223372036854775807,
+        cache: 1,
+      }),
     aid: uuid().notNull(),
     code: text().notNull(),
     attemptedAt: timestamp('attempted_at', { withTimezone: true, mode: 'string' })
@@ -109,14 +131,16 @@ export const events = pgTable(
   'events',
   {
     // You can use { mode: "bigint" } if numbers are exceeding js number limitations
-    id: bigint({ mode: 'number' }).primaryKey().generatedByDefaultAsIdentity({
-      name: 'event_id_seq',
-      startWith: 1,
-      increment: 1,
-      minValue: 1,
-      maxValue: 9223372036854775807,
-      cache: 1,
-    }),
+    id: bigint({ mode: 'number' })
+      .primaryKey()
+      .generatedByDefaultAsIdentity({
+        name: 'event_id_seq',
+        startWith: 1,
+        increment: 1,
+        minValue: 1,
+        maxValue: 9223372036854775807,
+        cache: 1,
+      }),
     dcid: text().notNull(),
     createdAt: timestamp('created_at', { withTimezone: true, mode: 'string' })
       .defaultNow()
@@ -149,6 +173,7 @@ export const users = pgTable('users', {
   createdAt: timestamp('created_at', { withTimezone: true, mode: 'string' }).defaultNow().notNull(),
   isBanned: boolean('is_banned').default(false).notNull(),
   enableNotif: boolean('enable_notif').default(true).notNull(),
-  lang: text().default('en-us').notNull(),
   isPrivate: boolean('is_private').default(false).notNull(),
+  updatedAt: timestamp('updated_at', { withTimezone: true, mode: 'string' }).defaultNow().notNull(),
+  lang: langEnum().default('en-us').notNull(),
 });

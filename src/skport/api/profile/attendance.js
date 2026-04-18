@@ -9,7 +9,7 @@ import logger from '#/logger';
 
 /**
  * Submit attendance to the API
- * @param {{cred: string, token: string, uid: string, serverId: string, lang: Language}} param0
+ * @param {{cred: string, token: string, uid: string, serverId: string, lang?: Language}} param0
  * @returns {Promise<{ status: -1, msg: string, timestamp: string } | { status: 0, data: ResourceItem[] }>}
  * @example
  * // Login with email and password

@@ -11,7 +11,25 @@ import {
   smallint,
   bigint,
   jsonb,
+  pgEnum,
 } from 'drizzle-orm/pg-core';
+
+export const langEnum = pgEnum('langEnum', [
+  'de-de',
+  'en-us',
+  'es-mx',
+  'fr-fr',
+  'id-id',
+  'it-it',
+  'ja-jp',
+  'ko-kr',
+  'pt-br',
+  'ru-ru',
+  'th-th',
+  'vi-vn',
+  'zh-cn',
+  'zh-tw',
+]);
 
 export const accounts = pgTable(
   'accounts',
@@ -149,6 +167,7 @@ export const users = pgTable('users', {
   createdAt: timestamp('created_at', { withTimezone: true, mode: 'string' }).defaultNow().notNull(),
   isBanned: boolean('is_banned').default(false).notNull(),
   enableNotif: boolean('enable_notif').default(true).notNull(),
-  lang: text().default('en-us').notNull(),
   isPrivate: boolean('is_private').default(false).notNull(),
+  updatedAt: timestamp('updated_at', { withTimezone: true, mode: 'string' }).defaultNow().notNull(),
+  lang: langEnum().default('en-us').notNull(),
 });

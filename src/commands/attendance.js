@@ -93,11 +93,9 @@ export default {
           )[0]?.id ?? null)
         : null;
 
-    const userLang = /** @type {import('#/constants/languages.js').Language} */ (user.lang);
-
     const container = new ContainerBuilder().addTextDisplayComponents((textDisplay) =>
       textDisplay.setContent(
-        `## ▼// ${t('attendance.header', userLang)}\n-# <t:${Math.floor(Date.now() / 1000)}:F>`
+        `## ▼// ${t('attendance.header', user.lang)}\n-# <t:${Math.floor(Date.now() / 1000)}:F>`
       )
     );
 
@@ -119,7 +117,7 @@ export default {
             token: cred.data.token,
             uid: a.roleId,
             serverId: a.serverId,
-            lang: userLang,
+            lang: user.lang,
           });
 
           hasContent = true;
@@ -147,10 +145,10 @@ export default {
             ...(bonusRewards.length > 0 && { bonus: bonusRewards }),
           });
 
-          const rewardString = `${mainReward.name}\n${t('attendance.amount', userLang, { count: mainReward.count })}`;
+          const rewardString = `${mainReward.name}\n${t('attendance.amount', user.lang, { count: mainReward.count })}`;
           const bonusString =
             bonusRewards.length > 0
-              ? `${t('attendance.bonus', userLang)}:\n${bonusRewards.map((r) => `${r.name} x${r.count}`).join('\n')}`
+              ? `${t('attendance.bonus', user.lang)}:\n${bonusRewards.map((r) => `${r.name} x${r.count}`).join('\n')}`
               : '';
 
           container.addSeparatorComponents((separator) => separator);

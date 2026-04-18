@@ -1,6 +1,7 @@
 -- Current sql file was generated after introspecting the database
 -- If you want to run this migration please uncomment this code before executing migrations
 /*
+CREATE TYPE "public"."langEnum" AS ENUM('de-de', 'en-us', 'es-mx', 'fr-fr', 'id-id', 'it-it', 'ja-jp', 'ko-kr', 'pt-br', 'ru-ru', 'th-th', 'vi-vn', 'zh-cn', 'zh-tw');--> statement-breakpoint
 CREATE TABLE "accounts" (
 	"id" uuid PRIMARY KEY DEFAULT gen_random_uuid() NOT NULL,
 	"dcid" text NOT NULL,
@@ -59,7 +60,10 @@ CREATE TABLE "users" (
 	"dcid" text PRIMARY KEY NOT NULL,
 	"created_at" timestamp with time zone DEFAULT now() NOT NULL,
 	"is_banned" boolean DEFAULT false NOT NULL,
-	"enable_notif" boolean DEFAULT true NOT NULL
+	"enable_notif" boolean DEFAULT true NOT NULL,
+	"is_private" boolean DEFAULT false NOT NULL,
+	"updated_at" timestamp with time zone DEFAULT now() NOT NULL,
+	"lang" "langEnum" DEFAULT 'en-us' NOT NULL
 );
 --> statement-breakpoint
 ALTER TABLE "users" ENABLE ROW LEVEL SECURITY;--> statement-breakpoint

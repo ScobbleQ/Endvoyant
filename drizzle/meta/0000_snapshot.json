@@ -419,6 +419,28 @@
           "primaryKey": false,
           "notNull": true,
           "default": true
+        },
+        "is_private": {
+          "name": "is_private",
+          "type": "boolean",
+          "primaryKey": false,
+          "notNull": true,
+          "default": false
+        },
+        "updated_at": {
+          "name": "updated_at",
+          "type": "timestamp with time zone",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "now()"
+        },
+        "lang": {
+          "name": "lang",
+          "type": "langEnum",
+          "typeSchema": "public",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "'en-us'"
         }
       },
       "indexes": {},
@@ -430,7 +452,28 @@
       "isRLSEnabled": true
     }
   },
-  "enums": {},
+  "enums": {
+    "public.langEnum": {
+      "name": "langEnum",
+      "values": [
+        "de-de",
+        "en-us",
+        "es-mx",
+        "fr-fr",
+        "id-id",
+        "it-it",
+        "ja-jp",
+        "ko-kr",
+        "pt-br",
+        "ru-ru",
+        "th-th",
+        "vi-vn",
+        "zh-cn",
+        "zh-tw"
+      ],
+      "schema": "public"
+    }
+  },
   "schemas": {},
   "sequences": {},
   "roles": {},

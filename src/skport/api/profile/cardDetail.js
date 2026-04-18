@@ -5,7 +5,7 @@ import logger from '#/logger';
 
 /**
  *
- * @param {{ serverId: string, roleId: string, cred: string, token: string, lang: import('#/constants/languages.js').Language }} param0
+ * @param {{ serverId: string, roleId: string, cred: string, token: string, lang?: import('#/constants/languages.js').Language }} param0
  * @returns {Promise<{ status: -1, msg: string, timestamp: string } | { status: 0, data: CardDetail }>}
  * @example
  * // Login with email and password
