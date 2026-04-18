@@ -13,10 +13,6 @@ export default defineConfig({
     url: process.env.DATABASE_URL,
   },
   schema: './drizzle/schema.ts',
-  migrations: {
-    path: './drizzle/migrations',
-    pattern: '*.ts',
-  },
   verbose: true,
   strict: true,
   onSuccess: () => {

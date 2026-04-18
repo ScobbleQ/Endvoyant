@@ -6,7 +6,7 @@ import {
   ActionRowBuilder,
 } from 'discord.js';
 import { BotConfig } from '#/config';
-import packageJson from '../../package.json' with { type: 'json' };
+import packageJson from '../../../package.json' with { type: 'json' };
 
 const WEBSITE_URL = 'https://ake.xentriom.com';
 const SUPPORT_SERVER_URL = 'https://discord.gg/5rUsSZTyf2';

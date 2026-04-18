@@ -1,5 +1,5 @@
 {
-  "name": "endministrator",
+  "name": "endvoyant",
   "version": "1.1.5",
   "description": "Your one stop shop for all Arknights: Endfield. Personalized bot to help make your experience better~",
   "keywords": [
@@ -8,15 +8,15 @@
     "discord",
     "endfield"
   ],
-  "homepage": "https://github.com/ScobbleQ/Endministrator#readme",
+  "homepage": "https://github.com/ScobbleQ/Endvoyant#readme",
   "bugs": {
-    "url": "https://github.com/ScobbleQ/Endministrator/issues"
+    "url": "https://github.com/ScobbleQ/Endvoyant/issues"
   },
   "license": "GPL-3.0-only",
   "author": "ScobbleQ",
   "repository": {
     "type": "git",
-    "url": "git+https://github.com/ScobbleQ/Endministrator.git"
+    "url": "git+https://github.com/ScobbleQ/Endvoyant.git"
   },
   "type": "module",
   "main": "index.js",

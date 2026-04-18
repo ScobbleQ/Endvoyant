@@ -1,6 +1,6 @@
 import { join } from 'node:path';
 import { REST, Routes } from 'discord.js';
-import { walkJavaScriptFiles } from '#/utils/walkJavaScriptFiles.js';
+import { walkCommandEntryFiles } from '#/utils/walkJavaScriptFiles.js';
 import { BotConfig } from '#/config';
 import logger from '#/logger';
 
@@ -8,7 +8,7 @@ import logger from '#/logger';
 const commands = [];
 
 const folderPath = join(import.meta.dirname, 'commands');
-const commandFiles = walkJavaScriptFiles(folderPath);
+const commandFiles = walkCommandEntryFiles(folderPath);
 
 for (const filePath of commandFiles) {
   const command = await import(filePath);

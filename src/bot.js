@@ -1,6 +1,6 @@
 import { join } from 'node:path';
 import { Client, Collection, GatewayIntentBits } from 'discord.js';
-import { walkJavaScriptFiles } from '#/utils/walkJavaScriptFiles.js';
+import { walkCommandEntryFiles, walkJavaScriptFiles } from '#/utils/walkJavaScriptFiles.js';
 import { BotConfig } from '#/config';
 import logger from '#/logger';
 
@@ -12,7 +12,7 @@ client.commands = new Collection();
 client.cooldowns = new Collection();
 
 const folderPath = join(import.meta.dirname, 'commands');
-const commandFiles = walkJavaScriptFiles(folderPath);
+const commandFiles = walkCommandEntryFiles(folderPath);
 
 for (const filePath of commandFiles) {
   const command = await import(filePath);
