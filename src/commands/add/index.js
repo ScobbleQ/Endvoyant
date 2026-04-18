@@ -2,13 +2,6 @@ import { ContainerBuilder, MessageFlags, SlashCommandBuilder } from 'discord.js'
 import { textContainer, errorContainer, warningContainer } from '#/components/index.js';
 import { Accounts, Events, Users } from '#/db/index.js';
 import {
-  addAccountContainer,
-  alreadyLinkedContainer,
-  cookieModal,
-  loginModal,
-  onboardingContainer,
-} from '#/features/add/ui.js';
-import {
   generateCredByCode,
   getBinding,
   grantOAuth,
@@ -16,6 +9,13 @@ import {
 } from '#/skport/api/index.js';
 import { parseCookieToken, sleep } from '#/utils/index.js';
 import { BotConfig } from '#/config';
+import {
+  addAccountContainer,
+  alreadyLinkedContainer,
+  cookieModal,
+  loginModal,
+  onboardingContainer,
+} from './_ui/index.js';
 
 /** @type {Record<string, { ownerOnly: boolean, execute: (interaction: import("discord.js").ButtonInteraction) => Promise<void> }>} */
 const addButtonInteractions = {

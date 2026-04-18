@@ -1,5 +1,5 @@
 import { Collection, Events, MessageFlags } from 'discord.js';
-import { errorContainer } from '#/components/containers/index.js';
+import { errorContainer } from '#/components/index.js';
 import { parseComponentId } from '#/utils/componentId.js';
 import { canUseOwnedInteraction, getInteractionRouteHandler } from '#/utils/interactionRouting.js';
 import logger from '#/logger';

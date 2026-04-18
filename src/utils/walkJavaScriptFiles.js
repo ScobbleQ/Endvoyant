@@ -27,8 +27,8 @@ export function walkJavaScriptFiles(directory) {
 }
 
 /**
- * Collect Discord slash-command entry modules: only files named `index.js`, skipping
- * directories whose names start with `_` (e.g. `_components`, `_shared`).
+ * Collect Discord slash-command entry modules: only files named `index.js`.
+ * Skips directories starting with `_` (private).
  * @param {string} directory
  * @returns {string[]}
  */
