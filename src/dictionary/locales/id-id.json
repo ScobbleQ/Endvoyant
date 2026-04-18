@@ -1,0 +1,7 @@
+{
+  "attendance": {
+    "header": "Ringkasan check-in",
+    "amount": "Jumlah: {{count}}",
+    "bonus": "Hadiah tambahan"
+  }
+}

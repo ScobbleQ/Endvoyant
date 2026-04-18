@@ -1,0 +1,7 @@
+{
+  "attendance": {
+    "header": "Tóm tắt điểm danh",
+    "amount": "Số lượng: {{count}}",
+    "bonus": "Phần thưởng bổ sung"
+  }
+}

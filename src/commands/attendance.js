@@ -1,8 +1,8 @@
 import { ContainerBuilder, MessageFlags, SlashCommandBuilder } from 'discord.js';
 import pLimit from 'p-limit';
 import { errorContainer } from '#/components/index.js';
-import { langToWeb } from '#/constants/webLanguage.js';
 import { Accounts, Users, Events } from '#/db/index.js';
+import { t } from '#/dictionary/index.js';
 import { attendance, generateCredByCode, grantOAuth } from '#/skport/api/index.js';
 import { privacy } from '#/utils/index.js';
 import logger from '#/utils/logger.js';
@@ -93,8 +93,12 @@ export default {
           )[0]?.id ?? null)
         : null;
 
+    const userLang = /** @type {import('#/constants/languages.js').Language} */ (user.lang);
+
     const container = new ContainerBuilder().addTextDisplayComponents((textDisplay) =>
-      textDisplay.setContent(`## ▼// Sign-in Reward\n-# <t:${Math.floor(Date.now() / 1000)}:F>`)
+      textDisplay.setContent(
+        `## ▼// ${t('attendance.header', userLang)}\n-# <t:${Math.floor(Date.now() / 1000)}:F>`
+      )
     );
 
     const limit = pLimit(5);
@@ -115,7 +119,7 @@ export default {
             token: cred.data.token,
             uid: a.roleId,
             serverId: a.serverId,
-            lang: /** @type {import('#/constants/languages.js').Language} */ (user.lang),
+            lang: userLang,
           });
 
           hasContent = true;
@@ -143,10 +147,10 @@ export default {
             ...(bonusRewards.length > 0 && { bonus: bonusRewards }),
           });
 
-          const rewardString = `${mainReward.name}\nAmount: ${mainReward.count}`;
+          const rewardString = `${mainReward.name}\n${t('attendance.amount', userLang, { count: mainReward.count })}`;
           const bonusString =
             bonusRewards.length > 0
-              ? `Additional Rewards:\n${bonusRewards.map((r) => `${r.name} x${r.count}`).join('\n')}`
+              ? `${t('attendance.bonus', userLang)}:\n${bonusRewards.map((r) => `${r.name} x${r.count}`).join('\n')}`
               : '';
 
           container.addSeparatorComponents((separator) => separator);

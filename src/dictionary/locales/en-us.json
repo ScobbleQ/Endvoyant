@@ -1,0 +1,7 @@
+{
+  "attendance": {
+    "header": "Sign-in Summary",
+    "amount": "Amount: {{count}}",
+    "bonus": "Additional Rewards"
+  }
+}

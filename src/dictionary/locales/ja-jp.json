@@ -1,0 +1,7 @@
+{
+  "attendance": {
+    "header": "チェックイン概要",
+    "amount": "数量：{{count}}",
+    "bonus": "追加報酬"
+  }
+}

@@ -1,0 +1,7 @@
+{
+  "attendance": {
+    "header": "Résumé du check-in",
+    "amount": "Quantité : {{count}}",
+    "bonus": "Récompenses supplémentaires"
+  }
+}

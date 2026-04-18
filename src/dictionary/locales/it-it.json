@@ -1,0 +1,7 @@
+{
+  "attendance": {
+    "header": "Riepilogo accessi",
+    "amount": "Quantità: {{count}}",
+    "bonus": "Ricompense aggiuntive"
+  }
+}

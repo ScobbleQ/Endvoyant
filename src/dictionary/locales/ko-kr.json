@@ -1,0 +1,7 @@
+{
+  "attendance": {
+    "header": "출석 요약",
+    "amount": "수량: {{count}}",
+    "bonus": "추가 보상"
+  }
+}

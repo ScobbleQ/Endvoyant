@@ -1,0 +1,7 @@
+{
+  "attendance": {
+    "header": "签到摘要",
+    "amount": "数量：{{count}}",
+    "bonus": "额外奖励"
+  }
+}

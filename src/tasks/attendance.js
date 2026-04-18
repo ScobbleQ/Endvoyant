@@ -1,6 +1,7 @@
 import { ContainerBuilder, DiscordAPIError, MessageFlags } from 'discord.js';
 import pLimit from 'p-limit';
 import { Users, Accounts, Events } from '#/db/index.js';
+import { t } from '#/dictionary/index.js';
 import { attendance, generateCredByCode, grantOAuth } from '#/skport/api/index.js';
 import { privacy } from '#/utils/privacy.js';
 import logger from '#/logger';
@@ -18,9 +19,13 @@ export async function checkAttendance(client) {
   const userTask = users.map((u) =>
     userLimit(async () => {
       try {
+        const userLang = /** @type {import('#/constants/languages.js').Language} */ (u.lang);
+
         // Create container for the user
-        const container = new ContainerBuilder().addTextDisplayComponents((t) =>
-          t.setContent(`## ▼// Sign-in Summary\n-# <t:${Math.floor(Date.now() / 1000)}:F>`)
+        const container = new ContainerBuilder().addTextDisplayComponents((textDisplay) =>
+          textDisplay.setContent(
+            `## ▼// ${t('attendance.header', userLang)}\n-# <t:${Math.floor(Date.now() / 1000)}:F>`
+          )
         );
 
         // Process accounts in parallel
@@ -43,7 +48,7 @@ export async function checkAttendance(client) {
                 token: cred.data.token,
                 uid: a.roleId,
                 serverId: a.serverId,
-                lang: /** @type {import('#/constants/languages.js').Language} */ (u.lang),
+                lang: userLang,
               });
 
               const headingString = `### ${a.nickname} [\`${privacy(a.roleId, a.isPrivate)}\`]`;
@@ -72,10 +77,10 @@ export async function checkAttendance(client) {
                 },
               });
 
-              const mainRewardString = `${mainReward.name}\nAmount: ${mainReward.count}`;
+              const mainRewardString = `${mainReward.name}\n${t('attendance.amount', userLang, { count: mainReward.count })}`;
               const bonusString =
                 bonusRewards.length > 0
-                  ? `Additional Rewards:\n${bonusRewards.map((r) => `${r.name} x${r.count}`).join('\n')}`
+                  ? `${t('attendance.bonus', userLang)}:\n${bonusRewards.map((r) => `${r.name} x${r.count}`).join('\n')}`
                   : '';
 
               container.addSeparatorComponents((separator) => separator);
