@@ -116,8 +116,8 @@ The bot is hosted with a centralized database and 24/7 uptime. Get instant updat
 
 - `src/` application source, including commands, events, database access, shared utilities, config, and constants
 - `assets/` static images and fonts used by the bot output
-- `drizzle/` generated migration and schema artifacts for database tooling
-- `scratch/` non-runtime prototypes and experiments that should not be auto-loaded as bot commands
+- `drizzle/` generated artifacts from Drizzle ORM
+- `experiments/` non-runtime prototypes and experiments that should not be auto-loaded as bot commands
 
 ## Contributing
 

@@ -1,6 +1,5 @@
 -- Current sql file was generated after introspecting the database
 -- If you want to run this migration please uncomment this code before executing migrations
-/*
 CREATE TYPE "public"."langEnum" AS ENUM('de-de', 'en-us', 'es-mx', 'fr-fr', 'id-id', 'it-it', 'ja-jp', 'ko-kr', 'pt-br', 'ru-ru', 'th-th', 'vi-vn', 'zh-cn', 'zh-tw');--> statement-breakpoint
 CREATE TABLE "accounts" (
 	"id" uuid PRIMARY KEY DEFAULT gen_random_uuid() NOT NULL,
@@ -72,4 +71,3 @@ ALTER TABLE "ef_attempted_codes" ADD CONSTRAINT "ef_attempted_codes_aid_fkey" FO
 ALTER TABLE "events" ADD CONSTRAINT "event_dcid_fkey" FOREIGN KEY ("dcid") REFERENCES "public"."users"("dcid") ON DELETE cascade ON UPDATE cascade;--> statement-breakpoint
 ALTER TABLE "events" ADD CONSTRAINT "events_aid_fkey" FOREIGN KEY ("aid") REFERENCES "public"."accounts"("id") ON DELETE cascade ON UPDATE cascade;--> statement-breakpoint
 CREATE UNIQUE INDEX "accounts_one_primary_per_user" ON "accounts" USING btree ("dcid" text_ops) WHERE is_primary;
-*/
